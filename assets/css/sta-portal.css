@@ -1,0 +1,120 @@
+.sta-portal-login-form, .sta-portal-signup-form {
+  max-width: 380px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 40px 30px 30px 30px;
+  border-radius: 24px;
+  box-shadow: 0 2px 40px rgba(0,0,0,0.10);
+  font-family: 'Inter', Arial, sans-serif;
+}
+.sta-portal-login-form h2,
+.sta-portal-signup-form h2 {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+.sta-portal-error {
+  color: #ff3c2b;
+  background: #fff3f2;
+  padding: 8px 16px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  text-align: center;
+  font-size: 0.98rem;
+}
+.sta-portal-login-form label,
+.sta-portal-signup-form label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+  margin-top: 20px;
+  color: #2f2f2f;
+}
+.sta-portal-login-form input,
+.sta-portal-signup-form input {
+  width: 100%;
+  padding: 13px 14px;
+  font-size: 1rem;
+  border: 1px solid #e1e2e6;
+  border-radius: 30px;
+  outline: none;
+  margin-bottom: 4px;
+  background: #f9fafd;
+  transition: border-color 0.2s;
+}
+.sta-portal-login-form input:focus,
+.sta-portal-signup-form input:focus {
+  border-color: #e30b41;
+  background: #fff;
+}
+.sta-portal-login-form button,
+.sta-portal-signup-form button {
+  display: block;
+  width: 100%;
+  margin-top: 30px;
+  padding: 14px 0;
+  background: #e30b41;
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 2px 8px rgba(227,11,65,0.08);
+}
+.sta-portal-login-form button:hover,
+.sta-portal-signup-form button:hover {
+  background: #c20937;
+}
+.sta-portal-login-form .sta-social-btn,
+.sta-portal-signup-form .sta-social-btn {
+  width: 100%;
+  margin-bottom: 18px;
+  border: none;
+  background: #eaf4fb;
+  color: #222;
+  border-radius: 30px;
+  padding: 11px 0;
+  font-size: 1.02rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.sta-portal-login-form .sta-social-btn:hover,
+.sta-portal-signup-form .sta-social-btn:hover {
+  background: #d0e8fa;
+}
+.sta-portal-login-form .sta-link,
+.sta-portal-signup-form .sta-link {
+  color: #e30b41;
+  font-weight: 500;
+  text-decoration: none;
+}
+.sta-portal-login-form .sta-link:hover,
+.sta-portal-signup-form .sta-link:hover {
+  text-decoration: underline;
+}
+.sta-portal-login-form .sta-bottom,
+.sta-portal-signup-form .sta-bottom {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 0.97rem;
+}
+@media (max-width: 520px) {
+  .sta-portal-login-form, .sta-portal-signup-form {
+    max-width: 98vw;
+    padding: 18px 7vw 30px 7vw;
+    border-radius: 10px;
+  }
+  .sta-portal-login-form button, .sta-portal-signup-form button,
+  .sta-portal-login-form .sta-social-btn, .sta-portal-signup-form .sta-social-btn {
+    font-size: 1rem;
+    padding: 12px 0;
+  }
+}
