@@ -6,6 +6,9 @@ class STA_Portal_Shortcodes {
     public function __construct() {
         add_shortcode( 'portal_login_form', array( $this, 'login_form_shortcode' ) );
         add_shortcode( 'portal_signup_form', array( $this, 'signup_form_shortcode' ) );
+        add_shortcode( 'portal_lost_password_form', array( $this, 'lost_password_form_shortcode' ) );
+        add_shortcode( 'portal_reset_password_form', array( $this, 'reset_password_form_shortcode' ) );
+
     }
 
     public function login_form_shortcode( $atts ) {
@@ -19,4 +22,19 @@ class STA_Portal_Shortcodes {
         include( STA_PORTAL_PATH . 'templates/signup-form.php' );
         return ob_get_clean();
     }
+
+    public function lost_password_form_shortcode( $atts ) {
+    ob_start();
+    include( STA_PORTAL_PATH . 'templates/lost-password-form.php' );
+    return ob_get_clean();
+    
+   }
+
+    public function reset_password_form_shortcode( $atts ) {
+    ob_start();
+    include( STA_PORTAL_PATH . 'templates/reset-password-form.php' );
+    return ob_get_clean();
+
+    }
+
 }

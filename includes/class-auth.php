@@ -6,6 +6,9 @@ class STA_Portal_Auth {
     public function __construct() {
         add_action( 'init', array( $this, 'handle_login_form' ) );
         add_action( 'init', array( $this, 'handle_signup_form' ) );
+        add_action( 'init', array( $this, 'handle_lost_password_form' ) );
+        add_action( 'init', array( $this, 'handle_reset_password_form' ) );
+
     }
 
     public function handle_login_form() {
@@ -63,4 +66,50 @@ class STA_Portal_Auth {
             exit;
         }
     }
+
+    // Handle lost password form
+public function handle_lost_password_form() {
+    if ( isset( $_POST['sta_portal_lostpass_nonce'] ) && wp_verify_nonce( $_POST['sta_portal_lostpass_nonce'], 'sta_portal_lostpass' ) ) {
+        $user_login = sanitize_text_field( $_POST['sta_lostpass_email'] );
+        $user = get_user_by( 'email', $user_login );
+        if ( ! $user ) {
+            wp_redirect( add_query_arg('sta_error', urlencode('No account found with that email.'), wp_get_referer() ) );
+            exit;
+        }
+        // Generate reset key and send email using WP's process
+        $reset_key = get_password_reset_key( $user );
+        $reset_url = site_url( '/reset-password/?key=' . $reset_key . '&login=' . rawurlencode( $user->user_login ) );
+        // Use WP default email template (for simplicity) or build your own
+        $message = "Someone requested a password reset for the following account: \r\n\r\n";
+        $message .= "Username: " . $user->user_login . "\r\n";
+        $message .= "If this was a mistake, just ignore this email.\r\n";
+        $message .= "To reset your password, visit the following address: " . $reset_url;
+        wp_mail( $user->user_email, 'Password Reset Request', $message );
+        wp_redirect( add_query_arg('sta_success', urlencode('Check your email for the password reset link.'), wp_get_referer() ) );
+        exit;
+    }
+}
+
+// Handle reset password form
+public function handle_reset_password_form() {
+    if ( isset( $_POST['sta_portal_resetpass_nonce'] ) && wp_verify_nonce( $_POST['sta_portal_resetpass_nonce'], 'sta_portal_resetpass' ) ) {
+        $key   = sanitize_text_field( $_POST['reset_key'] );
+        $login = sanitize_text_field( $_POST['reset_login'] );
+        $pass1 = $_POST['sta_new_pass1'];
+        $pass2 = $_POST['sta_new_pass2'];
+        if ( $pass1 !== $pass2 ) {
+            wp_redirect( add_query_arg('sta_error', urlencode('Passwords do not match.'), wp_get_referer() ) );
+            exit;
+        }
+        $user = check_password_reset_key( $key, $login );
+        if ( is_wp_error( $user ) ) {
+            wp_redirect( add_query_arg('sta_error', urlencode('Invalid reset link. Please try again.'), site_url('/forgot-password/') ) );
+            exit;
+        }
+        reset_password( $user, $pass1 );
+        wp_redirect( add_query_arg('sta_success', urlencode('Your password has been reset. Please log in.'), site_url('/login/') ) );
+        exit;
+    }
+}
+
 }

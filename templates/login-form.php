@@ -20,7 +20,7 @@ $error = isset($_GET['sta_error']) ? urldecode($_GET['sta_error']) : '';
         <button type="submit">Login</button>
     </form>
     <div class="sta-bottom" style="margin-top:14px;">
-        <span>Having issues with your <a href="<?php echo wp_lostpassword_url(); ?>" class="sta-link">Password?</a></span>
+        <span>Having issues with your <a href="<?php echo site_url('/forgot-password/'); ?>" class="sta-link">Password?</a></span>
     </div>
     <div class="sta-bottom" style="margin-top:6px;">
         <span>Not a member yet? <a href="<?php echo site_url('/signup/'); ?>" class="sta-link"><b>JOIN NOW</b></a></span>

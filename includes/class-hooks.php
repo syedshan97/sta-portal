@@ -54,7 +54,7 @@ class STA_Portal_Hooks {
      * Enqueue portal CSS styles on login and signup pages only.
      */
     public function enqueue_portal_styles() {
-        if ( is_page(['login', 'signup']) ) {
+        if ( is_page(['login', 'signup', 'forgot-password', 'reset-password']) ) {
             wp_enqueue_style(
                 'sta-portal-css',
                 STA_PORTAL_URL . 'assets/css/sta-portal.css',
