@@ -19,6 +19,11 @@ class STA_Portal_Hooks {
 
         // Enqueue portal styles only on login/signup pages
         add_action('wp_enqueue_scripts', array($this, 'enqueue_portal_styles'));
+
+        add_action('init', array($this, 'handle_google_login_redirect'));
+
+        add_action('init', array($this, 'handle_google_callback'));
+
     }
 
     /**
@@ -63,4 +68,99 @@ class STA_Portal_Hooks {
             );
         }
     }
+
+    public function handle_google_login_redirect() {
+    if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/google-login/') !== false) {
+        $google_enabled = get_option('sta_portal_google_enable');
+        if (!$google_enabled) wp_die('Google Login is disabled.');
+        $client_id = get_option('sta_portal_google_client_id');
+        $callback = get_option('sta_portal_google_callback_url');
+        $state = wp_create_nonce('sta_portal_google_login');
+        $scope = 'email profile';
+        $google_oauth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
+            'response_type' => 'code',
+            'client_id' => $client_id,
+            'redirect_uri' => $callback,
+            'scope' => $scope,
+            'state' => $state,
+            'access_type' => 'online',
+            'prompt' => 'select_account'
+        ]);
+        wp_redirect($google_oauth_url);
+        exit;
+    }
+   }
+
+   public function handle_google_callback() {
+    // Adjust the path to match your callback URL slug
+    if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/google-login-callback/') !== false) {
+        // Security: Verify state (optional)
+        if (!isset($_GET['state']) || !wp_verify_nonce($_GET['state'], 'sta_portal_google_login')) {
+            wp_die('Invalid state/nonce. Please try again.');
+        }
+
+        // Check for error or code in callback
+        if (isset($_GET['error'])) {
+            wp_die('Google login error: ' . esc_html($_GET['error']));
+        }
+        if (empty($_GET['code'])) {
+            wp_die('Missing Google auth code.');
+        }
+
+        // Get tokens from Google
+        $client_id = get_option('sta_portal_google_client_id');
+        $client_secret = get_option('sta_portal_google_client_secret');
+        $callback = get_option('sta_portal_google_callback_url');
+        $token_url = 'https://oauth2.googleapis.com/token';
+
+        $response = wp_remote_post($token_url, [
+            'body' => [
+                'code' => $_GET['code'],
+                'client_id' => $client_id,
+                'client_secret' => $client_secret,
+                'redirect_uri' => $callback,
+                'grant_type' => 'authorization_code'
+            ]
+        ]);
+        if (is_wp_error($response)) wp_die('Token request failed.');
+
+        $token_data = json_decode(wp_remote_retrieve_body($response), true);
+        if (empty($token_data['access_token'])) wp_die('Failed to get access token.');
+
+        // Get user info from Google
+        $userinfo = wp_remote_get('https://www.googleapis.com/oauth2/v2/userinfo', [
+            'headers' => ['Authorization' => 'Bearer ' . $token_data['access_token']]
+        ]);
+        if (is_wp_error($userinfo)) wp_die('Failed to get user info.');
+        $user_data = json_decode(wp_remote_retrieve_body($userinfo), true);
+
+        if (empty($user_data['email'])) wp_die('No email received from Google.');
+        $email = sanitize_email($user_data['email']);
+        $name  = sanitize_text_field($user_data['name'] ?? 'Google User');
+
+        // Try to find user by email
+        $user = get_user_by('email', $email);
+
+        if (!$user) {
+            // Register new user with unique portal_user_id
+            $random_pass = wp_generate_password(12, true);
+            $last_id = get_option('sta_portal_last_user_id', 4500);
+            $next_id = intval($last_id) + 1;
+            $user_id = wp_create_user($email, $random_pass, $email);
+            if (is_wp_error($user_id)) wp_die('Could not create user: ' . $user_id->get_error_message());
+            wp_update_user(['ID' => $user_id, 'display_name' => $name]);
+            update_user_meta($user_id, 'portal_user_id', $next_id);
+            update_option('sta_portal_last_user_id', $next_id);
+            $user = get_user_by('id', $user_id);
+        }
+
+        // Log the user in
+        wp_set_current_user($user->ID);
+        wp_set_auth_cookie($user->ID);
+        wp_redirect(site_url('/dashboard/'));
+        exit;
+    }
+ }
+
+
 }

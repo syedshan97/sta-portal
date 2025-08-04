@@ -7,9 +7,13 @@ $error = isset($_GET['sta_error']) ? urldecode($_GET['sta_error']) : '';
     <?php if ($error): ?>
         <div class="sta-portal-error"><?php echo esc_html($error); ?></div>
     <?php endif; ?>
-    <button type="button" class="sta-social-btn" style="margin-bottom:18px;">
-        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20" height="20" style="vertical-align:middle;"> Sign up with Google
-    </button>
+    <?php if (get_option('sta_portal_google_enable')): ?>
+    <a href="<?php echo site_url('/google-login/'); ?>" class="sta-social-btn" style="margin-bottom:18px;">
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20" height="20" style="vertical-align:middle;">
+        Sign in with Google
+    </a>
+    <?php endif; ?>
+
     <div style="text-align:center;font-size:0.98rem;color:#b2b2b2;margin-bottom:10px;">Or use Email</div>
     <form method="post" autocomplete="off">
         <?php wp_nonce_field('sta_portal_login', 'sta_portal_login_nonce'); ?>

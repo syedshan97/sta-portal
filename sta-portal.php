@@ -16,12 +16,16 @@ define( 'STA_PORTAL_URL', plugin_dir_url( __FILE__ ) );
 require_once( STA_PORTAL_PATH . 'includes/class-shortcodes.php' );
 require_once( STA_PORTAL_PATH . 'includes/class-auth.php' );
 require_once( STA_PORTAL_PATH . 'includes/class-hooks.php' );
+require_once( STA_PORTAL_PATH . 'includes/class-admin.php' );
+
 
 // Initialize plugin
 add_action( 'plugins_loaded', function() {
     new STA_Portal_Shortcodes();
     new STA_Portal_Auth();
     new STA_Portal_Hooks();
+    new STA_Portal_Admin();
+
 });
 
 
