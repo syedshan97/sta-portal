@@ -44,7 +44,13 @@ class STA_Portal_Admin {
         register_setting( 'sta_portal_social_login', 'sta_portal_google_client_id' );
         register_setting( 'sta_portal_social_login', 'sta_portal_google_client_secret' );
         register_setting( 'sta_portal_social_login', 'sta_portal_google_callback_url' );
-        // Later: LinkedIn settings
+        // Microsoft 365 (Entra ID)
+        register_setting( 'sta_portal_social_login', 'sta_portal_ms_enable' );
+register_setting( 'sta_portal_social_login', 'sta_portal_ms_client_id' );
+register_setting( 'sta_portal_social_login', 'sta_portal_ms_client_secret' );
+register_setting( 'sta_portal_social_login', 'sta_portal_ms_callback_url' );
+register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // default: organizations
+
     }
 
     /**
@@ -90,6 +96,48 @@ class STA_Portal_Admin {
                             <p class="description">Copy this URL into your Google Cloud Console OAuth settings. Example: <code>https://yourdomain.com/google-login-callback/</code></p>
                         </td>
                     </tr>
+                    <tr>
+  <th colspan="2"><h2>Microsoft 365 (Entra ID) Login</h2></th>
+</tr>
+<tr>
+  <th scope="row">Enable Microsoft Login</th>
+  <td>
+    <input type="checkbox" name="sta_portal_ms_enable" value="1" <?php checked( get_option('sta_portal_ms_enable'), 1 ); ?> />
+    <label>Show "Sign in with Microsoft" on login and signup</label>
+  </td>
+</tr>
+<tr>
+  <th scope="row">Client ID (Application ID)</th>
+  <td>
+    <input type="text" name="sta_portal_ms_client_id" value="<?php echo esc_attr(get_option('sta_portal_ms_client_id')); ?>" class="regular-text" />
+  </td>
+</tr>
+<tr>
+  <th scope="row">Client Secret</th>
+  <td>
+    <input type="password" name="sta_portal_ms_client_secret" value="<?php echo esc_attr(get_option('sta_portal_ms_client_secret')); ?>" class="regular-text" autocomplete="new-password" />
+  </td>
+</tr>
+<tr>
+  <th scope="row">Callback URL</th>
+  <td>
+    <input type="text" name="sta_portal_ms_callback_url" value="<?php echo esc_attr(get_option('sta_portal_ms_callback_url')); ?>" class="regular-text" />
+    <p class="description">Use this in Azure: e.g. <code>https://yourdomain.com/microsoft-login-callback/</code></p>
+  </td>
+</tr>
+<tr>
+  <th scope="row">Tenant</th>
+  <td>
+    <?php $tenant = get_option('sta_portal_ms_tenant', 'organizations'); ?>
+    <select name="sta_portal_ms_tenant">
+      <option value="organizations" <?php selected($tenant, 'organizations'); ?>>organizations (work/school only)</option>
+      <option value="common" <?php selected($tenant, 'common'); ?>>common (work/school + personal)</option>
+      <option value="consumers" <?php selected($tenant, 'consumers'); ?>>consumers (personal only)</option>
+    </select>
+    <p class="description">You asked for orgs only → keep as <b>organizations</b>.</p>
+  </td>
+</tr>
+
                 </table>
                 <?php submit_button(); ?>
             </form>

@@ -13,6 +13,13 @@ $error = isset($_GET['sta_error']) ? urldecode($_GET['sta_error']) : '';
         Sign in with Google
     </a>
     <?php endif; ?>
+    <?php if (get_option('sta_portal_ms_enable')): ?>
+  <a href="<?php echo site_url('/microsoft-login/'); ?>" class="sta-social-btn" style="margin-bottom:18px;">
+    <img src="https://www.svgrepo.com/show/475661/microsoft.svg" alt="Microsoft" width="20" height="20" style="vertical-align:middle;">
+    Sign in with Microsoft
+  </a>
+<?php endif; ?>
+
 
     <div style="text-align:center;font-size:0.98rem;color:#b2b2b2;margin-bottom:10px;">Or use Email</div>
     <form method="post" autocomplete="off">

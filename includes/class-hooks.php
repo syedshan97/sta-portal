@@ -24,6 +24,11 @@ class STA_Portal_Hooks {
 
         add_action('init', array($this, 'handle_google_callback'));
 
+        add_action('init', array($this, 'handle_ms_login_redirect'));
+        
+        add_action('init', array($this, 'handle_ms_callback'));
+
+
     }
 
     /**
@@ -161,6 +166,117 @@ class STA_Portal_Hooks {
         exit;
     }
  }
+
+ public function handle_ms_login_redirect() {
+    if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/microsoft-login/') !== false) {
+        if (!get_option('sta_portal_ms_enable')) wp_die('Microsoft login is disabled.');
+
+        $client_id = trim(get_option('sta_portal_ms_client_id'));
+        $callback  = trim(get_option('sta_portal_ms_callback_url'));
+        $tenant    = trim(get_option('sta_portal_ms_tenant', 'organizations')); // you want orgs only
+        if (!$client_id || !$callback) wp_die('Microsoft login is not configured.');
+
+        $state = wp_create_nonce('sta_portal_ms_login');
+        $authorize = "https://login.microsoftonline.com/{$tenant}/oauth2/v2.0/authorize";
+
+        $params = [
+            'client_id'     => $client_id,
+            'response_type' => 'code',
+            'redirect_uri'  => $callback,
+            'response_mode' => 'query',
+            'scope'         => 'openid profile email User.Read',
+            'state'         => $state,
+            // 'prompt' => 'select_account', // uncomment if you want to force account picker
+        ];
+
+        wp_redirect($authorize . '?' . http_build_query($params));
+        exit;
+    }
+}
+
+public function handle_ms_callback() {
+    if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/microsoft-login-callback/') !== false) {
+        // Verify state
+        if (!isset($_GET['state']) || !wp_verify_nonce($_GET['state'], 'sta_portal_ms_login')) {
+            wp_die('Invalid state. Please try again.');
+        }
+        if (isset($_GET['error'])) {
+            wp_die('Microsoft login error: ' . esc_html($_GET['error_description'] ?? $_GET['error']));
+        }
+        if (empty($_GET['code'])) {
+            wp_die('Missing authorization code.');
+        }
+
+        $client_id     = trim(get_option('sta_portal_ms_client_id'));
+        $client_secret = trim(get_option('sta_portal_ms_client_secret'));
+        $callback      = trim(get_option('sta_portal_ms_callback_url'));
+        $tenant        = trim(get_option('sta_portal_ms_tenant', 'organizations'));
+        if (!$client_id || !$client_secret || !$callback) wp_die('Microsoft login is not configured.');
+
+        $token_endpoint = "https://login.microsoftonline.com/{$tenant}/oauth2/v2.0/token";
+
+        // Exchange code for tokens
+        $response = wp_remote_post($token_endpoint, [
+            'body' => [
+                'client_id'     => $client_id,
+                'client_secret' => $client_secret,
+                'grant_type'    => 'authorization_code',
+                'code'          => $_GET['code'],
+                'redirect_uri'  => $callback,
+                'scope'         => 'openid profile email User.Read',
+            ],
+            'timeout' => 20,
+        ]);
+        if (is_wp_error($response)) wp_die('Token request failed.');
+        $token_data = json_decode(wp_remote_retrieve_body($response), true);
+        if (empty($token_data['access_token'])) wp_die('Failed to obtain access token.');
+
+        $access_token = $token_data['access_token'];
+
+        // Get user via Microsoft Graph
+        $me = wp_remote_get('https://graph.microsoft.com/v1.0/me', [
+            'headers' => ['Authorization' => 'Bearer ' . $access_token],
+            'timeout' => 20,
+        ]);
+        if (is_wp_error($me)) wp_die('Failed to fetch user from Graph.');
+        $me_data = json_decode(wp_remote_retrieve_body($me), true);
+
+        // Prefer 'mail', fallback to 'userPrincipalName'
+        $email = '';
+        if (!empty($me_data['mail'])) {
+            $email = sanitize_email($me_data['mail']);
+        } elseif (!empty($me_data['userPrincipalName'])) {
+            $email = sanitize_email($me_data['userPrincipalName']);
+        }
+        if (!$email) wp_die('No email available on Microsoft account.');
+
+        $name = !empty($me_data['displayName']) ? sanitize_text_field($me_data['displayName']) : 'Microsoft User';
+
+        // Find or create WP user
+        $user = get_user_by('email', $email);
+        if (!$user) {
+            $random_pass = wp_generate_password(12, true);
+            $last_id = get_option('sta_portal_last_user_id', 4500);
+            $next_id = intval($last_id) + 1;
+
+            $user_id = wp_create_user($email, $random_pass, $email);
+            if (is_wp_error($user_id)) wp_die('Could not create user: ' . $user_id->get_error_message());
+            wp_update_user(['ID' => $user_id, 'display_name' => $name]);
+
+            update_user_meta($user_id, 'portal_user_id', $next_id);
+            update_option('sta_portal_last_user_id', $next_id);
+
+            $user = get_user_by('id', $user_id);
+        }
+
+        // Log in + redirect
+        wp_set_current_user($user->ID);
+        wp_set_auth_cookie($user->ID);
+        wp_redirect(site_url('/dashboard/'));
+        exit;
+    }
+}
+
 
 
 }
