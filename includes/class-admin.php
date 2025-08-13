@@ -33,6 +33,17 @@ class STA_Portal_Admin {
             'sta-portal-social-login',
             array( $this, 'render_social_login_page' )
         );
+
+        // Users listing (under STA Portal)
+        add_submenu_page(
+    'sta-portal',                     // parent slug (use the same one you used for STA Portal top-level)
+    'Users',                          // page title
+    'Users',                          // menu title
+    'list_users',                     // capability (admins have it; shows only to roles that can list users)
+    'sta-portal-users',               // menu slug
+    array($this, 'render_users_page') // callback
+     );
+
     }
 
     /**
@@ -145,4 +156,118 @@ register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // defaul
         </div>
         <?php
     }
+
+    public function render_users_page() {
+    if ( ! current_user_can('list_users') ) {
+        wp_die(__('You do not have sufficient permissions to access this page.'));
+    }
+
+    // Pagination & search
+    $base_url = admin_url('admin.php?page=sta-portal-users');
+    $paged    = max(1, intval($_GET['paged'] ?? 1));
+    $per_page = 20;
+    $search_q = isset($_GET['s']) ? sanitize_text_field($_GET['s']) : '';
+
+    $args = array(
+        'number' => $per_page,
+        'offset' => ($paged - 1) * $per_page,
+        'orderby' => 'registered',
+        'order'   => 'DESC',
+        'fields'  => array('ID', 'display_name', 'user_email'),
+    );
+
+    if ($search_q !== '') {
+        $args['search']         = '*'. $search_q .'*';
+        $args['search_columns'] = array('user_login','user_email','display_name');
+    }
+
+    $query = new WP_User_Query($args);
+    $users = $query->get_results();
+    $total = intval($query->get_total());
+    $total_pages = max(1, ceil($total / $per_page));
+
+    // Small styles (scoped to this page)
+    echo '<div class="wrap"><h1 class="wp-heading-inline">STA Portal — Users</h1>';
+    echo '<hr class="wp-header-end" />';
+
+    // Search form
+    echo '<form method="get" style="margin:12px 0;">';
+    echo '<input type="hidden" name="page" value="sta-portal-users" />';
+    echo '<p class="search-box">';
+    echo '<label class="screen-reader-text" for="user-search-input">Search Users:</label>';
+    echo '<input type="search" id="user-search-input" name="s" value="'. esc_attr($search_q) .'" />';
+    echo '<input type="submit" id="search-submit" class="button" value="Search Users" />';
+    echo '</p>';
+    echo '</form>';
+
+    // Table
+    echo '<style>
+        .sta-users-table{width:100%; border-collapse:collapse; background:#fff; }
+        .sta-users-table th, .sta-users-table td{border-bottom:1px solid #e7ebf2; padding:10px; text-align:left;}
+        .sta-users-table th{background:#f7f9fd; font-weight:600;}
+        .sta-badge{display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #e7eaf2; background:#f5f7fb; font-size:12px;}
+        .sta-badge--ok{background:#f6ffed; border-color:#b7eb8f; color:#237804;}
+        .sta-badge--no{background:#fff1f0; border-color:#ffccc7; color:#a8071a;}
+    </style>';
+
+    echo '<table class="widefat fixed striped sta-users-table">';
+    echo '<thead><tr>';
+    echo '<th>Name</th>';
+    echo '<th>Email</th>';
+    echo '<th>Organization</th>';
+    echo '<th>Country</th>';
+    echo '<th>Sign up via</th>';
+    echo '<th>Email Verified</th>';
+    echo '</tr></thead><tbody>';
+
+    if ($users) {
+        foreach ($users as $u) {
+            $org      = get_user_meta($u->ID, 'sta_org', true);
+            $country  = get_user_meta($u->ID, 'sta_addr_country', true);
+            $provider = get_user_meta($u->ID, 'sta_auth_provider', true);
+            $verified = intval(get_user_meta($u->ID, 'sta_email_verified', true));
+
+            switch ($provider) {
+                case 'google':    $provider_label = 'Google'; break;
+                case 'microsoft': $provider_label = 'Microsoft 365'; break;
+                default:          $provider_label = 'Email';
+            }
+            $social_verified = ( $verified === 1 || in_array($provider, array('google','microsoft'), true) ) ? 1 : 0;
+            $v_badge = $social_verified === 1
+                ? '<span class="sta-badge sta-badge--ok">Yes</span>'
+                : '<span class="sta-badge sta-badge--no">No</span>';
+
+            echo '<tr>';
+            echo '<td>'. esc_html($u->display_name ?: '-') .'</td>';
+            echo '<td><a href="mailto:'. esc_attr($u->user_email) .'">'. esc_html($u->user_email) .'</a></td>';
+            echo '<td>'. esc_html($org ?: '-') .'</td>';
+            echo '<td>'. esc_html($country ?: '-') .'</td>';
+            echo '<td><span class="sta-badge">'. esc_html($provider_label) .'</span></td>';
+            echo '<td>'. $v_badge .'</td>';
+            echo '</tr>';
+        }
+    } else {
+        echo '<tr><td colspan="6">No users found.</td></tr>';
+    }
+
+    echo '</tbody></table>';
+
+    // Pagination
+    if ($total_pages > 1) {
+        echo '<div class="tablenav"><div class="tablenav-pages" style="margin-top:10px;">';
+        $page_links = paginate_links( array(
+            'base'      => add_query_arg('paged', '%#%', $base_url . ($search_q ? '&s=' . urlencode($search_q) : '')),
+            'format'    => '',
+            'prev_text' => '&laquo;',
+            'next_text' => '&raquo;',
+            'total'     => $total_pages,
+            'current'   => $paged,
+        ) );
+        echo $page_links ? $page_links : '';
+        echo '</div></div>';
+    }
+
+    echo '</div>'; // .wrap
+}
+
 }

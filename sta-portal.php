@@ -20,6 +20,7 @@ require_once( STA_PORTAL_PATH . 'includes/class-auth.php' );
 require_once( STA_PORTAL_PATH . 'includes/class-hooks.php' );
 require_once( STA_PORTAL_PATH . 'includes/class-admin.php' );
 require_once( STA_PORTAL_PATH . 'includes/class-profile.php' );
+require_once STA_PORTAL_PATH . 'includes/class-email-verification.php';
 
 
 // Initialize plugin
@@ -29,6 +30,7 @@ add_action( 'plugins_loaded', function() {
 	new STA_Portal_Hooks();
     new STA_Portal_Admin();
     new STA_Portal_Profile();
+    new STA_Portal_Email_Verification();
 
 });
 

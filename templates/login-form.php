@@ -1,6 +1,27 @@
 <?php
 $error = isset($_GET['sta_error']) ? urldecode($_GET['sta_error']) : '';
 ?>
+<?php
+// --- Notices from query string ---
+$allowed = array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) );
+
+$sta_error   = isset($_GET['sta_error'])
+    ? wp_kses( urldecode( (string) $_GET['sta_error'] ), $allowed )
+    : '';
+
+$sta_success = isset($_GET['sta_success'])
+    ? wp_kses( urldecode( (string) $_GET['sta_success'] ), $allowed )
+    : '';
+?>
+
+<?php if ( $sta_error ): ?>
+  <div class="sta-portal-error"><?php echo $sta_error; ?></div>
+<?php endif; ?>
+
+<?php if ( $sta_success ): ?>
+  <div class="sta-portal-error sta-portal-success"><?php echo $sta_success; ?></div>
+<?php endif; ?>
+
 <div class="sta-portal-login-form">
     <h2>WELCOME BACK EXCLUSIVE MEMBER</h2>
     <div style="text-align:center;margin-bottom:10px;font-size:1.04rem;color:#808080;">LOG IN TO CONTINUE</div>
