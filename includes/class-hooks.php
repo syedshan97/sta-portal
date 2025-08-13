@@ -15,27 +15,32 @@ class STA_Portal_Hooks {
         add_action('after_setup_theme', array($this, 'maybe_hide_admin_bar'));
 
         // Prevent non-admins from accessing /wp-admin/
-        add_action('admin_init', array($this, 'maybe_disable_admin_dashboard'));
+       // add_action('admin_init', array($this, 'maybe_disable_admin_dashboard'));
+        add_action('admin_init', array($this, 'restrict_admin_for_non_admins'));
 
         // Enqueue portal styles only on login/signup pages
         add_action('wp_enqueue_scripts', array($this, 'enqueue_portal_styles'));
-
+        
         add_action('init', array($this, 'handle_google_login_redirect'));
-
+        
         add_action('init', array($this, 'handle_google_callback'));
-
+        
         add_action('init', array($this, 'handle_ms_login_redirect'));
         
         add_action('init', array($this, 'handle_ms_callback'));
+        
+        add_filter('ajax_query_attachments_args', array($this, 'restrict_media_to_author'));
+        add_filter('rest_attachment_query',       array($this, 'restrict_media_to_author_rest'), 10, 2);
+        add_action('add_attachment',              array($this, 'ensure_attachment_author'));
 
-
+        
     }
 
     /**
      * Redirect non-logged-in users away from the dashboard page.
      */
     public function protect_dashboard_page() {
-        if ( is_page('dashboard') && !is_user_logged_in() ) {
+        if ( is_page( array('dashboard', 'manage-profile') ) && !is_user_logged_in() ) {
             wp_redirect(site_url('/login/'));
             exit;
         }
@@ -50,30 +55,52 @@ class STA_Portal_Hooks {
         }
     }
 
-    /**
-     * Redirect non-admin users away from the backend.
-     */
-    public function maybe_disable_admin_dashboard() {
-        if ( ! current_user_can('administrator') && ! defined('DOING_AJAX') ) {
-            wp_redirect( site_url('/dashboard/') );
-            exit;
-        }
+
+    public function restrict_admin_for_non_admins() {
+    // Allow admins
+    if ( current_user_can('administrator') ) {
+        return;
     }
+
+    // Let these core endpoints through (needed for front-end forms & uploads)
+    $script = isset($_SERVER['PHP_SELF']) ? basename($_SERVER['PHP_SELF']) : '';
+    $whitelist = array('admin-post.php', 'admin-ajax.php', 'async-upload.php');
+    if ( in_array($script, $whitelist, true) ) {
+        return;
+    }
+
+    // Also allow REST and CRON
+    if ( defined('REST_REQUEST') && REST_REQUEST ) return;
+    if ( defined('DOING_CRON') && DOING_CRON ) return;
+
+    // Block the rest of wp-admin for non-admins
+    if ( is_admin() ) {
+        wp_safe_redirect( site_url('/dashboard/') );
+        exit;
+    }
+}
+
 
     /**
      * Enqueue portal CSS styles on login and signup pages only.
      */
-    public function enqueue_portal_styles() {
-        if ( is_page(['login', 'signup', 'forgot-password', 'reset-password']) ) {
-            wp_enqueue_style(
-                'sta-portal-css',
-                STA_PORTAL_URL . 'assets/css/sta-portal.css',
-                [],
-                '1.0.0'
-            );
-        }
+   public function enqueue_portal_styles() {
+    // shared styles for auth/profile pages
+    if ( is_page( array('login','signup','forgot-password','reset-password','manage-profile') ) ) {
+        wp_enqueue_style('sta-portal-css', STA_PORTAL_URL.'assets/css/sta-portal.css', [], '1.0.0');
     }
-
+    // manage profile only
+    if ( is_page('manage-profile') && is_user_logged_in() ) {
+        wp_enqueue_style('sta-profile-css', STA_PORTAL_URL.'assets/css/sta-profile.css', [], '1.0.0');
+        wp_enqueue_media();
+        wp_enqueue_script('sta-profile-js', STA_PORTAL_URL.'assets/js/sta-profile.js', ['jquery'], '1.0.0', true);
+        wp_localize_script('sta-profile-js', 'staProfile', [
+            'nonce'   => wp_create_nonce('sta_profile_avatar'),
+            'ajaxurl' => admin_url('admin-ajax.php'),
+        ]);
+    }
+}
+    
     public function handle_google_login_redirect() {
     if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/google-login/') !== false) {
         $google_enabled = get_option('sta_portal_google_enable');
@@ -94,9 +121,9 @@ class STA_Portal_Hooks {
         wp_redirect($google_oauth_url);
         exit;
     }
-   }
-
-   public function handle_google_callback() {
+    }
+    
+    public function handle_google_callback() {
     // Adjust the path to match your callback URL slug
     if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/google-login-callback/') !== false) {
         // Security: Verify state (optional)
@@ -145,6 +172,7 @@ class STA_Portal_Hooks {
 
         // Try to find user by email
         $user = get_user_by('email', $email);
+        
 
         if (!$user) {
             // Register new user with unique portal_user_id
@@ -158,6 +186,11 @@ class STA_Portal_Hooks {
             update_option('sta_portal_last_user_id', $next_id);
             $user = get_user_by('id', $user_id);
         }
+        
+        update_user_meta($user->ID, 'sta_auth_provider', 'google');
+        if (!empty($user_data['id'])) {
+            update_user_meta($user->ID, 'sta_google_sub', sanitize_text_field($user_data['id']));
+        }
 
         // Log the user in
         wp_set_current_user($user->ID);
@@ -165,9 +198,9 @@ class STA_Portal_Hooks {
         wp_redirect(site_url('/dashboard/'));
         exit;
     }
- }
-
- public function handle_ms_login_redirect() {
+    }
+    
+    public function handle_ms_login_redirect() {
     if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/microsoft-login/') !== false) {
         if (!get_option('sta_portal_ms_enable')) wp_die('Microsoft login is disabled.');
 
@@ -268,6 +301,11 @@ public function handle_ms_callback() {
 
             $user = get_user_by('id', $user_id);
         }
+        
+        update_user_meta($user->ID, 'sta_auth_provider', 'microsoft');
+        if (!empty($me_data['id'])) {
+            update_user_meta($user->ID, 'sta_ms_id', sanitize_text_field($me_data['id']));
+        }
 
         // Log in + redirect
         wp_set_current_user($user->ID);
@@ -277,6 +315,38 @@ public function handle_ms_callback() {
     }
 }
 
+// Limit the media modal (admin-ajax query-attachments) to current user's uploads
+public function restrict_media_to_author( $args ) {
+    // Let admins see everything
+    if ( current_user_can('manage_options') ) {
+        return $args;
+    }
+    $args['author'] = get_current_user_id();
+    return $args;
+}
+
+// Limit the REST /wp/v2/media listing (some WP versions / contexts use REST)
+public function restrict_media_to_author_rest( $args, $request ) {
+    if ( current_user_can('manage_options') ) {
+        return $args;
+    }
+    $args['author'] = get_current_user_id();
+    return $args;
+}
+
+// Make sure new uploads are owned by the uploader (important for subscribers)
+public function ensure_attachment_author( $attachment_id ) {
+    if ( ! is_user_logged_in() ) return;
+    if ( current_user_can('manage_options') ) return;
+
+    $post = get_post( $attachment_id );
+    if ( $post && (int) $post->post_author === 0 ) {
+        wp_update_post( array(
+            'ID' => $attachment_id,
+            'post_author' => get_current_user_id(),
+        ) );
+    }
+}
 
 
 }
