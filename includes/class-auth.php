@@ -8,6 +8,8 @@ class STA_Portal_Auth {
         add_action( 'init', array( $this, 'handle_signup_form' ) );
         add_action( 'init', array( $this, 'handle_lost_password_form' ) );
         add_action( 'init', array( $this, 'handle_reset_password_form' ) );
+        add_filter('authenticate', array($this, 'block_unverified_local_on_auth'), 30, 3);
+
 
     }
 
@@ -179,5 +181,50 @@ public function handle_reset_password_form() {
         exit;
     }
 }
+
+/**
+ * Block email/password login for unverified "local" users.
+ * Works globally (wp-login.php, custom forms, wp_signon()).
+ *
+ * @param WP_User|WP_Error|null $user
+ * @param string $username
+ * @param string $password
+ * @return WP_User|WP_Error|null
+ */
+public function block_unverified_local_on_auth( $user, $username, $password ) {
+    // If another auth step already failed or user not resolved yet, do nothing.
+    if ( is_wp_error($user) || ! $user instanceof WP_User ) {
+        return $user;
+    }
+
+    // Social logins are trusted → allow
+    $provider = get_user_meta($user->ID, 'sta_auth_provider', true);
+    if ( in_array($provider, array('google','microsoft'), true) ) {
+        return $user;
+    }
+
+    // Treat missing provider as local (legacy accounts)
+    if ( $provider === '' ) {
+        $provider = 'local';
+        // Optional: backfill for future clarity
+        // update_user_meta($user->ID, 'sta_auth_provider', 'local');
+    }
+
+    if ( $provider === 'local' ) {
+        $verified = intval( get_user_meta($user->ID, 'sta_email_verified', true) );
+        if ( $verified !== 1 ) {
+            // Build a resend link if the class exists
+            $msg = 'Please verify your email to continue.';
+            if ( class_exists('STA_Portal_Email_Verification') ) {
+                $resend_url = STA_Portal_Email_Verification::get_resend_url( $user->ID );
+                $msg .= ' <a href="'. esc_url($resend_url) .'">Resend verification email</a>.';
+            }
+            return new WP_Error( 'email_not_verified', $msg );
+        }
+    }
+
+    return $user;
+}
+
 
 }

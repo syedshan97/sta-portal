@@ -25,9 +25,7 @@ $sta_success = isset($_GET['sta_success'])
 <div class="sta-portal-login-form">
     <h2>WELCOME BACK EXCLUSIVE MEMBER</h2>
     <div style="text-align:center;margin-bottom:10px;font-size:1.04rem;color:#808080;">LOG IN TO CONTINUE</div>
-    <?php if ($error): ?>
-        <div class="sta-portal-error"><?php echo esc_html($error); ?></div>
-    <?php endif; ?>
+    
     <?php if (get_option('sta_portal_google_enable')): ?>
     <a href="<?php echo site_url('/google-login/'); ?>" class="sta-social-btn" style="margin-bottom:18px;">
         <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20" height="20" style="vertical-align:middle;">
