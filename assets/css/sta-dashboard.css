@@ -1,0 +1,54 @@
+/* Dashboard base */
+/* Welcome card */
+.sta-welcome-card{
+  position:relative;
+  border:1px solid #E5E7EB;
+  border-radius:16px;
+  overflow:hidden;
+  background:#fff;
+  margin-bottom:18px;
+}
+.sta-welcome-card .swc-inner{
+  display:grid;
+  grid-template-columns:120px 1fr;
+  gap:18px;
+  padding:22px 22px 22px 22px;
+  position:relative;
+  z-index:2;
+}
+.swc-left{display:flex;align-items:center;justify-content:center}
+.swc-avatar{width:88px;height:88px;border-radius:999px;overflow:hidden;border:3px solid #EEF2F7;background:#F3F6FB;box-shadow:0 2px 10px rgba(17,24,39,.08)}
+.swc-avatar img{width:100%;height:100%;object-fit:cover}
+.swc-avatar-fallback{width:100%;height:100%;background:linear-gradient(135deg,#e5e7eb,#f3f4f6)}
+
+.swc-right{display:flex;flex-direction:column;gap:6px}
+.swc-meta{margin:0;color:#6B7280;font-size:.95rem}
+.swc-title{margin:.15rem 0 .35rem;font-size:1.55rem;line-height:1.25;color:#111827;font-weight:700}
+.swc-row{margin:.1rem 0;color:#374151}
+.swc-row strong{color:#111827;font-weight:600}
+.swc-sep{opacity:.6;margin:0 .4rem}
+
+.swc-actions{margin-top:.35rem}
+.swc-edit{display:inline-block;padding:8px 12px;border-radius:10px;border:1px solid #E5E7EB;text-decoration:none;color:#111827;background:#fff}
+.swc-edit:hover{background:#F7F9FD}
+
+/* Decorative right-side art/gradient to match the provided design */
+.swc-art{
+  position:absolute;right:0;top:0;bottom:0;width:38%;
+  background:radial-gradient(120px 120px at 70% 50%, rgba(255,102,102,.25), transparent 70%),
+             radial-gradient(220px 160px at 40% 30%, rgba(116,154,255,.25), transparent 60%),
+             linear-gradient(90deg, rgba(255,255,255,0), rgba(249,250,251,.9));
+  pointer-events:none;
+}
+
+/* Responsive */
+@media (max-width:900px){
+  .sta-welcome-card .swc-inner{grid-template-columns:90px 1fr}
+  .swc-avatar{width:76px;height:76px}
+  .swc-title{font-size:1.35rem}
+}
+@media (max-width:640px){
+  .sta-welcome-card .swc-inner{grid-template-columns:1fr; padding:18px}
+  .swc-left{justify-content:flex-start}
+  .swc-art{display:none}
+}
