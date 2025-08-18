@@ -129,3 +129,60 @@
   color: #18a058;
   background: #e9faf1;
 }
+
+/** Name, Email and Password Validation Code START **/
+
+/* Inline field messages (signup) */
+.sta-field-msg{
+  display:block;
+  margin-top:6px;
+  font-size:.85rem;
+  color:#6b7280;
+}
+input.is-error + .sta-field-msg{ color:#b91c1c; }
+input.is-valid + .sta-field-msg{ color:#16a34a; }
+
+/* Optional wrapper states if your markup uses .sta-field */
+.sta-field.has-error input{ border-color:#dc2626; background:#fff; }
+.sta-field.has-valid input{ border-color:#16a34a; background:#fff; }
+
+/* Password: green check when valid */
+#sta-signup-password.is-valid{
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2316a34a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6L9 17l-5-5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 18px 18px;
+  padding-right: 40px; /* space for icon */
+}
+
+/* Basic input/error visuals (fallback if theme is minimal) */
+input.is-error{ border:1px solid #dc2626; }
+input.is-valid{ border:1px solid #16a34a; }
+
+/* Responsive nicety: avoid overflow on narrow screens */
+@media (max-width:600px){
+  #sta-signup-form .sta-primary-btn{ width:100%; }
+}
+
+/* Force green state + check icon for valid password */
+#sta-signup-form #sta-signup-password.is-valid{
+  border-color:#16a34a !important;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2316a34a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6L9 17l-5-5'/></svg>") !important;
+  background-repeat:no-repeat !important;
+  background-position:right 12px center !important;
+  background-size:18px 18px !important;
+  padding-right:42px !important; /* space for icon */
+}
+
+/* Make the “Looks good.” text green in all cases */
+#sta-signup-form #sta-signup-password.is-valid + .sta-field-msg,
+#sta-signup-form .sta-field.has-valid .sta-field-msg,
+#sta-signup-form .sta-field-msg.is-ok{
+  color:#16a34a !important;
+}
+
+/* Ensure error/valid borders show even if theme overrides */
+#sta-signup-form input.is-error{ border:1px solid #dc2626 !important; }
+#sta-signup-form input.is-valid{ border:1px solid #16a34a !important; }
+
+/** Name, Email and Password Validation Code END **/

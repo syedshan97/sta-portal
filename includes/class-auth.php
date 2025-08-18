@@ -75,16 +75,34 @@ class STA_Portal_Auth {
         $name     = sanitize_text_field( $_POST['sta_signup_name'] ?? '' );
         $password = $_POST['sta_signup_password'] ?? '';
 
-        // Basic validation
-        if ( empty($email) || empty($name) || empty($password) ) {
-            wp_safe_redirect( add_query_arg('sta_error', urlencode('Please fill all required fields.'), wp_get_referer() ?: site_url('/signup/')) );
-            exit;
-        }
+        // --- SIMPLE VALIDATION (server-side) ---
+$errors = [];
 
-        if ( email_exists( $email ) ) {
-            wp_safe_redirect( add_query_arg('sta_error', urlencode('Email already exists.'), wp_get_referer() ?: site_url('/signup/')) );
-            exit;
-        }
+// Name: English letters and spaces only, non-empty
+if ( empty($name) || !preg_match('/^[A-Za-z ]+$/', $name) ) {
+    $errors[] = 'Please enter your name using English letters and spaces only.';
+}
+
+// Email: required + valid format
+if ( empty($email) || !is_email($email) ) {
+    $errors[] = 'Please enter a valid email address (e.g., name@example.com).';
+}
+
+// Password: ≥8, at least one letter, one digit, one symbol
+$has_len   = strlen($password) >= 8;
+$has_alpha = preg_match('/[A-Za-z]/', $password);
+$has_digit = preg_match('/\d/', $password);
+$has_sym   = preg_match('/[^A-Za-z0-9]/', $password);
+
+if ( !($has_len && $has_alpha && $has_digit && $has_sym) ) {
+    $errors[] = 'Password must be at least 8 characters and include a letter, a number, and a symbol.';
+}
+
+if (!empty($errors)) {
+    wp_safe_redirect( add_query_arg('sta_error', urlencode(implode(' ', $errors)), wp_get_referer() ?: site_url('/signup/')) );
+    exit;
+}
+// --- END SIMPLE VALIDATION ---
 
         // Generate unique custom portal user ID
         $last_id = get_option('sta_portal_last_user_id', 4500);
