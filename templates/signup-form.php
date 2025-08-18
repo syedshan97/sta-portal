@@ -30,13 +30,13 @@ $sta_success = isset($_GET['sta_success'])
     <?php endif; ?>
     <?php if (get_option('sta_portal_google_enable')): ?>
     <a href="<?php echo site_url('/google-login/'); ?>" class="sta-social-btn" style="margin-bottom:18px;">
-        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20" height="20" style="vertical-align:middle;">
+        <img src="https://portal.systemsthinkingalliance.org/wp-content/uploads/2025/08/google-icon.png" alt="Google" width="20" height="20" style="vertical-align:middle;">
         Sign up with Google
     </a>
     <?php endif; ?>
     <?php if (get_option('sta_portal_ms_enable')): ?>
   <a href="<?php echo site_url('/microsoft-login/'); ?>" class="sta-social-btn" style="margin-bottom:18px;">
-    <img src="https://www.svgrepo.com/show/475661/microsoft.svg" alt="Microsoft" width="20" height="20" style="vertical-align:middle;">
+    <img src="https://portal.systemsthinkingalliance.org/wp-content/uploads/2025/08/O365-icon.png" alt="Microsoft" width="20" height="20" style="vertical-align:middle;">
     Sign in with Microsoft
   </a>
 <?php endif; ?>
