@@ -10,6 +10,11 @@ class STA_Portal_Admin {
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
         add_action( 'admin_init', array( $this, 'register_settings' ) );
+        add_filter('manage_users_columns', array($this, 'add_verified_column'));
+        add_filter('manage_users_custom_column', array($this, 'render_verified_column'), 10, 3);
+        add_action('admin_post_sta_portal_delete_user', array($this, 'handle_delete_user'));
+
+
     }
 
     /**
@@ -33,16 +38,16 @@ class STA_Portal_Admin {
             'sta-portal-social-login',
             array( $this, 'render_social_login_page' )
         );
-
+        
         // Users listing (under STA Portal)
-        add_submenu_page(
+add_submenu_page(
     'sta-portal',                     // parent slug (use the same one you used for STA Portal top-level)
     'Users',                          // page title
     'Users',                          // menu title
     'list_users',                     // capability (admins have it; shows only to roles that can list users)
     'sta-portal-users',               // menu slug
     array($this, 'render_users_page') // callback
-     );
+);
 
     }
 
@@ -55,12 +60,14 @@ class STA_Portal_Admin {
         register_setting( 'sta_portal_social_login', 'sta_portal_google_client_id' );
         register_setting( 'sta_portal_social_login', 'sta_portal_google_client_secret' );
         register_setting( 'sta_portal_social_login', 'sta_portal_google_callback_url' );
+        // Microsoft365
         // Microsoft 365 (Entra ID)
         register_setting( 'sta_portal_social_login', 'sta_portal_ms_enable' );
-register_setting( 'sta_portal_social_login', 'sta_portal_ms_client_id' );
-register_setting( 'sta_portal_social_login', 'sta_portal_ms_client_secret' );
-register_setting( 'sta_portal_social_login', 'sta_portal_ms_callback_url' );
-register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // default: organizations
+        register_setting( 'sta_portal_social_login', 'sta_portal_ms_client_id' );
+        register_setting( 'sta_portal_social_login', 'sta_portal_ms_client_secret' );
+        register_setting( 'sta_portal_social_login', 'sta_portal_ms_callback_url' );
+        register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // default: organizations
+
 
     }
 
@@ -107,6 +114,7 @@ register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // defaul
                             <p class="description">Copy this URL into your Google Cloud Console OAuth settings. Example: <code>https://yourdomain.com/google-login-callback/</code></p>
                         </td>
                     </tr>
+                    
                     <tr>
   <th colspan="2"><h2>Microsoft 365 (Entra ID) Login</h2></th>
 </tr>
@@ -149,6 +157,8 @@ register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // defaul
   </td>
 </tr>
 
+
+                    
                 </table>
                 <?php submit_button(); ?>
             </form>
@@ -156,8 +166,10 @@ register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // defaul
         </div>
         <?php
     }
-
-    public function render_users_page() {
+    
+    //New : 
+    
+public function render_users_page() {
     if ( ! current_user_can('list_users') ) {
         wp_die(__('You do not have sufficient permissions to access this page.'));
     }
@@ -169,11 +181,12 @@ register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // defaul
     $search_q = isset($_GET['s']) ? sanitize_text_field($_GET['s']) : '';
 
     $args = array(
-        'number' => $per_page,
-        'offset' => ($paged - 1) * $per_page,
+        'role'    => 'subscriber',
+        'number'  => $per_page,
+        'offset'  => ($paged - 1) * $per_page,
         'orderby' => 'registered',
         'order'   => 'DESC',
-        'fields'  => array('ID', 'display_name', 'user_email'),
+        'fields'  => array('ID','display_name','user_email','user_login'),
     );
 
     if ($search_q !== '') {
@@ -181,12 +194,11 @@ register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // defaul
         $args['search_columns'] = array('user_login','user_email','display_name');
     }
 
-    $query = new WP_User_Query($args);
-    $users = $query->get_results();
-    $total = intval($query->get_total());
+    $query       = new WP_User_Query($args);
+    $users       = $query->get_results();
+    $total       = intval($query->get_total());
     $total_pages = max(1, ceil($total / $per_page));
 
-    // Small styles (scoped to this page)
     echo '<div class="wrap"><h1 class="wp-heading-inline">STA Portal — Users</h1>';
     echo '<hr class="wp-header-end" />';
 
@@ -200,14 +212,16 @@ register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // defaul
     echo '</p>';
     echo '</form>';
 
-    // Table
+    // Styles
     echo '<style>
-        .sta-users-table{width:100%; border-collapse:collapse; background:#fff; }
-        .sta-users-table th, .sta-users-table td{border-bottom:1px solid #e7ebf2; padding:10px; text-align:left;}
+        .sta-users-table{width:100%; border-collapse:collapse; background:#fff;}
+        .sta-users-table th, .sta-users-table td{border-bottom:1px solid #e7ebf2; padding:10px; text-align:left; vertical-align:middle;}
         .sta-users-table th{background:#f7f9fd; font-weight:600;}
         .sta-badge{display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #e7eaf2; background:#f5f7fb; font-size:12px;}
         .sta-badge--ok{background:#f6ffed; border-color:#b7eb8f; color:#237804;}
         .sta-badge--no{background:#fff1f0; border-color:#ffccc7; color:#a8071a;}
+        .sta-actions a{margin-right:8px;}
+        .sta-actions .delete{color:#a8071a;}
     </style>';
 
     echo '<table class="widefat fixed striped sta-users-table">';
@@ -218,10 +232,20 @@ register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // defaul
     echo '<th>Country</th>';
     echo '<th>Sign up via</th>';
     echo '<th>Email Verified</th>';
+    echo '<th>Last Login</th>';
+    echo '<th>Actions</th>';
     echo '</tr></thead><tbody>';
 
     if ($users) {
         foreach ($users as $u) {
+            // Name: prefer first + last
+            $first = get_user_meta($u->ID, 'first_name', true);
+            $last  = get_user_meta($u->ID, 'last_name',  true);
+            $name_display = trim($first . ' ' . $last);
+            if ($name_display === '') {
+                $name_display = $u->display_name ?: $u->user_login;
+            }
+
             $org      = get_user_meta($u->ID, 'sta_org', true);
             $country  = get_user_meta($u->ID, 'sta_addr_country', true);
             $provider = get_user_meta($u->ID, 'sta_auth_provider', true);
@@ -232,22 +256,47 @@ register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // defaul
                 case 'microsoft': $provider_label = 'Microsoft 365'; break;
                 default:          $provider_label = 'Email';
             }
-            $social_verified = ( $verified === 1 || in_array($provider, array('google','microsoft'), true) ) ? 1 : 0;
-            $v_badge = $social_verified === 1
+
+            // Treat social as verified automatically
+            $is_verified = ( $verified === 1 || in_array($provider, array('google','microsoft'), true) ) ? 1 : 0;
+            $v_badge = $is_verified
                 ? '<span class="sta-badge sta-badge--ok">Yes</span>'
                 : '<span class="sta-badge sta-badge--no">No</span>';
 
+            // Last login
+            $last_login_raw = get_user_meta($u->ID, 'sta_last_login', true);
+            if ($last_login_raw) {
+                $ts   = is_numeric($last_login_raw) ? intval($last_login_raw) : strtotime($last_login_raw);
+                $when = $ts ? date_i18n( get_option('date_format').' '.get_option('time_format'), $ts ) : $last_login_raw;
+            } else {
+                $when = '—';
+            }
+
+            // Actions (Delete)
+            $actions_html = '';
+            if ( current_user_can('delete_user', $u->ID) && get_current_user_id() !== intval($u->ID) ) {
+                $del_url = wp_nonce_url(
+                    admin_url('admin-post.php?action=sta_portal_delete_user&user_id=' . intval($u->ID) . '&redirect=' . urlencode($base_url)),
+                    'sta_delete_user_' . intval($u->ID)
+                );
+                $actions_html = '<div class="sta-actions"><a class="delete" href="'. esc_url($del_url) .'" onclick="return confirm(\'Delete this user? This cannot be undone.\')">Delete</a></div>';
+            } else {
+                $actions_html = '<span class="description">—</span>';
+            }
+
             echo '<tr>';
-            echo '<td>'. esc_html($u->display_name ?: '-') .'</td>';
+            echo '<td>'. esc_html($name_display) .'</td>';
             echo '<td><a href="mailto:'. esc_attr($u->user_email) .'">'. esc_html($u->user_email) .'</a></td>';
             echo '<td>'. esc_html($org ?: '-') .'</td>';
             echo '<td>'. esc_html($country ?: '-') .'</td>';
             echo '<td><span class="sta-badge">'. esc_html($provider_label) .'</span></td>';
             echo '<td>'. $v_badge .'</td>';
+            echo '<td>'. esc_html($when) .'</td>';
+            echo '<td>'. $actions_html .'</td>';
             echo '</tr>';
         }
     } else {
-        echo '<tr><td colspan="6">No users found.</td></tr>';
+        echo '<tr><td colspan="8">No users found.</td></tr>';
     }
 
     echo '</tbody></table>';
@@ -270,4 +319,40 @@ register_setting( 'sta_portal_social_login', 'sta_portal_ms_tenant' ); // defaul
     echo '</div>'; // .wrap
 }
 
+
+    public function handle_delete_user() {
+    if ( ! current_user_can('delete_users') ) {
+        wp_die(__('You do not have permission to delete users.'));
+    }
+    $user_id  = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
+    $redirect = isset($_GET['redirect']) ? esc_url_raw($_GET['redirect']) : admin_url('admin.php?page=sta-portal-users');
+
+    if ( ! $user_id || ! wp_verify_nonce($_GET['_wpnonce'] ?? '', 'sta_delete_user_' . $user_id) ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('Invalid request.'), $redirect) );
+        exit;
+    }
+    if ( get_current_user_id() === $user_id ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('You cannot delete your own account.'), $redirect) );
+        exit;
+    }
+    if ( ! current_user_can('delete_user', $user_id) ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('You are not allowed to delete this user.'), $redirect) );
+        exit;
+    }
+
+    // Delete the user (no reassignment). If you want to reassign, pass user ID as second arg.
+    $ok = wp_delete_user($user_id);
+
+    if ( $ok ) {
+        wp_safe_redirect( add_query_arg('sta_success', urlencode('User deleted.'), $redirect) );
+    } else {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('Failed to delete user.'), $redirect) );
+    }
+    exit;
+}
+
+
+
+        
+    
 }

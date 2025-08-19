@@ -1,29 +1,25 @@
-// Signup Form Validation Code
+// assets/js/sta-portal.js
+// Simple client-side validation for the STA signup form
+// This is a basic validation script for the STA portal signup form.
+// It checks first name, last name, email, and password fields for validity.
+// Messages are displayed inline next to each field.
 (function () {
   // Only run on the Signup page (form present)
   var form = document.getElementById('sta-signup-form');
   if (!form) return;
 
-  var nameInput = document.getElementById('sta-signup-name');
+  var firstInput = document.getElementById('sta-signup-first');
+  var lastInput  = document.getElementById('sta-signup-last');
   var emailInput = document.getElementById('sta-signup-email');
   var passInput  = document.getElementById('sta-signup-password');
 
-  if (!nameInput || !emailInput || !passInput) return;
+  if (!firstInput || !lastInput || !emailInput || !passInput) return;
 
-  // Create or fetch a <small> message element just after an input
-  function ensureMsgEl(input, id) {
-    var el = document.getElementById(id);
-    if (el) return el;
-    el = document.createElement('small');
-    el.id = id;
-    el.className = 'sta-field-msg';
-    input.insertAdjacentElement('afterend', el);
-    return el;
-  }
-
-  var nameMsg = ensureMsgEl(nameInput,  'msg-name');
-  var emailMsg= ensureMsgEl(emailInput, 'msg-email');
-  var passMsg = ensureMsgEl(passInput,  'msg-password');
+  // Message elements (already in template)
+  var firstMsg = document.getElementById('msg-first');
+  var lastMsg  = document.getElementById('msg-last');
+  var emailMsg = document.getElementById('msg-email');
+  var passMsg  = document.getElementById('msg-password');
 
   function setErr(input, msgEl, msg) {
     input.classList.add('is-error');
@@ -32,6 +28,7 @@
     var wrap = input.closest('.sta-field');
     if (wrap) { wrap.classList.add('has-error'); wrap.classList.remove('has-valid'); }
   }
+
   function setOk(input, msgEl, msg) {
     input.classList.remove('is-error');
     input.classList.add('is-valid');
@@ -39,19 +36,21 @@
     var wrap = input.closest('.sta-field');
     if (wrap) { wrap.classList.remove('has-error'); wrap.classList.add('has-valid'); }
   }
-  function clearState(input, msgEl) {
-    input.classList.remove('is-error','is-valid');
-    if (msgEl) msgEl.textContent = '';
-    var wrap = input.closest('.sta-field');
-    if (wrap) { wrap.classList.remove('has-error','has-valid'); }
+
+  // Validators
+  function validateFirst() {
+    var v = (firstInput.value || '').trim();
+    if (!v) { setErr(firstInput, firstMsg, 'First name is required.'); return false; }
+    if (!/^[A-Za-z]+$/.test(v)) { setErr(firstInput, firstMsg, 'Use English letters only.'); return false; }
+    setOk(firstInput, firstMsg, '');
+    return true;
   }
 
-  // Simple validators
-  function validateName() {
-    var v = (nameInput.value || '').trim();
-    if (!v) { setErr(nameInput, nameMsg, 'Name is required.'); return false; }
-    if (!/^[A-Za-z ]+$/.test(v)) { setErr(nameInput, nameMsg, 'Use English letters and spaces only.'); return false; }
-    setOk(nameInput, nameMsg, '');
+  function validateLast() {
+    var v = (lastInput.value || '').trim();
+    if (!v) { setErr(lastInput, lastMsg, 'Last name is required.'); return false; }
+    if (!/^[A-Za-z]+$/.test(v)) { setErr(lastInput, lastMsg, 'Use English letters only.'); return false; }
+    setOk(lastInput, lastMsg, '');
     return true;
   }
 
@@ -75,40 +74,43 @@
     var ok = okLen && okAlpha && okDigit && okSym;
 
     if (ok) {
-  setOk(passInput, passMsg, 'Looks good.');
-  passMsg.classList.add('is-ok');      // <-- force green style on the message
-} else {
-  passInput.classList.remove('is-valid');
-  passMsg.classList.remove('is-ok');   // <-- remove green when invalid
-  if (live){
-    passMsg.textContent = 'Password must be at least 8 characters and include a letter, a number, and a symbol.';
-    var wrap = passInput.closest('.sta-field');
-    if (wrap) wrap.classList.remove('has-error','has-valid');
-  } else {
-    setErr(passInput, passMsg, 'Password must be at least 8 characters and include a letter, a number, and a symbol.');
-  }
-}
+      setOk(passInput, passMsg, 'Looks good.');
+      passMsg.classList.add('is-ok'); // force green style on message
+    } else {
+      passInput.classList.remove('is-valid');
+      passMsg.classList.remove('is-ok');
+      if (live) {
+        // Keep hint while typing
+        passMsg.textContent = 'Password must be at least 8 characters and include a letter, a number, and a symbol.';
+        var wrap = passInput.closest('.sta-field');
+        if (wrap) wrap.classList.remove('has-error','has-valid');
+      } else {
+        setErr(passInput, passMsg, 'Password must be at least 8 characters and include a letter, a number, and a symbol.');
+      }
+    }
     return ok;
   }
 
   // Live validation
-  nameInput.addEventListener('input', validateName);
+  firstInput.addEventListener('input', validateFirst);
+  lastInput .addEventListener('input', validateLast);
   emailInput.addEventListener('input', validateEmail);
   passInput .addEventListener('input', function(){ validatePassword(true); });
 
   // On submit
   form.addEventListener('submit', function (e) {
-    var ok1 = validateName();
-    var ok2 = validateEmail();
-    var ok3 = validatePassword(false);
-    if (!(ok1 && ok2 && ok3)) {
+    var ok1 = validateFirst();
+    var ok2 = validateLast();
+    var ok3 = validateEmail();
+    var ok4 = validatePassword(false);
+    if (!(ok1 && ok2 && ok3 && ok4)) {
       e.preventDefault();
       e.stopPropagation();
       // focus first error
-      if (!ok1) { nameInput.focus(); return; }
-      if (!ok2) { emailInput.focus(); return; }
-      if (!ok3) { passInput.focus(); return; }
+      if (!ok1) { firstInput.focus(); return; }
+      if (!ok2) { lastInput.focus(); return; }
+      if (!ok3) { emailInput.focus(); return; }
+      if (!ok4) { passInput.focus(); return; }
     }
   });
-
 })();

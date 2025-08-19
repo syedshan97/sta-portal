@@ -33,93 +33,78 @@ class STA_Portal_Auth {
         }
     }
 
-    // public function handle_signup_form() {
-    //     if ( isset( $_POST['sta_portal_signup_nonce'] ) && wp_verify_nonce( $_POST['sta_portal_signup_nonce'], 'sta_portal_signup' ) ) {
-    //         $email    = sanitize_email( $_POST['sta_signup_email'] );
-    //         $name     = sanitize_text_field( $_POST['sta_signup_name'] );
-    //         $password = $_POST['sta_signup_password'];
+    
 
-    //         if ( email_exists( $email ) ) {
-    //             wp_redirect( add_query_arg('sta_error', urlencode('Email already exists.'), wp_get_referer() ) );
-    //             exit;
-    //         }
-
-    //         // Generate unique custom portal user ID
-    //         $last_id = get_option('sta_portal_last_user_id', 4500);
-    //         $next_id = intval($last_id) + 1;
-
-    //         $user_id = wp_create_user( $email, $password, $email );
-    //         if ( is_wp_error( $user_id ) ) {
-    //             wp_redirect( add_query_arg('sta_error', urlencode($user_id->get_error_message()), wp_get_referer() ) );
-    //             exit;
-    //         }
-    //         // Save display name and custom portal ID
-    //         wp_update_user( array(
-    //             'ID' => $user_id,
-    //             'display_name' => $name
-    //         ));
-    //         update_user_meta( $user_id, 'portal_user_id', $next_id );
-    //         update_option( 'sta_portal_last_user_id', $next_id );
-
-    //         // Auto-login after registration
-    //         wp_set_current_user( $user_id );
-    //         wp_set_auth_cookie( $user_id );
-    //         wp_redirect( site_url('/dashboard/') );
-    //         exit;
-    //     }
-    // }
-
-    public function handle_signup_form() {
+   public function handle_signup_form() {
     if ( isset($_POST['sta_portal_signup_nonce']) && wp_verify_nonce($_POST['sta_portal_signup_nonce'], 'sta_portal_signup') ) {
+
+        // --- FIRST/LAST NAME UPGRADE: collect inputs ---
+        $first    = sanitize_text_field( $_POST['sta_signup_first'] ?? '' );
+        $last     = sanitize_text_field( $_POST['sta_signup_last'] ?? '' );
         $email    = sanitize_email( $_POST['sta_signup_email'] ?? '' );
-        $name     = sanitize_text_field( $_POST['sta_signup_name'] ?? '' );
         $password = $_POST['sta_signup_password'] ?? '';
 
         // --- SIMPLE VALIDATION (server-side) ---
-$errors = [];
+        $errors = [];
 
-// Name: English letters and spaces only, non-empty
-if ( empty($name) || !preg_match('/^[A-Za-z ]+$/', $name) ) {
-    $errors[] = 'Please enter your name using English letters and spaces only.';
-}
+        // First name: required, English letters only
+        if ( $first === '' || !preg_match('/^[A-Za-z]+$/', $first) ) {
+            $errors[] = 'First name is required (English letters only).';
+        }
 
-// Email: required + valid format
-if ( empty($email) || !is_email($email) ) {
-    $errors[] = 'Please enter a valid email address (e.g., name@example.com).';
-}
+        // Last name: required, English letters only
+        if ( $last === '' || !preg_match('/^[A-Za-z]+$/', $last) ) {
+            $errors[] = 'Last name is required (English letters only).';
+        }
 
-// Password: ≥8, at least one letter, one digit, one symbol
-$has_len   = strlen($password) >= 8;
-$has_alpha = preg_match('/[A-Za-z]/', $password);
-$has_digit = preg_match('/\d/', $password);
-$has_sym   = preg_match('/[^A-Za-z0-9]/', $password);
+        // Email: required + valid format
+        if ( $email === '' || !is_email($email) ) {
+            $errors[] = 'Please enter a valid email address (e.g., name@example.com).';
+        }
 
-if ( !($has_len && $has_alpha && $has_digit && $has_sym) ) {
-    $errors[] = 'Password must be at least 8 characters and include a letter, a number, and a symbol.';
-}
+        // Password: ≥8, at least one letter, one digit, one symbol
+        $has_len   = strlen($password) >= 8;
+        $has_alpha = preg_match('/[A-Za-z]/', $password);
+        $has_digit = preg_match('/\d/', $password);
+        $has_sym   = preg_match('/[^A-Za-z0-9]/', $password);
 
-if (!empty($errors)) {
-    wp_safe_redirect( add_query_arg('sta_error', urlencode(implode(' ', $errors)), wp_get_referer() ?: site_url('/signup/')) );
-    exit;
-}
-// --- END SIMPLE VALIDATION ---
+        if ( !($has_len && $has_alpha && $has_digit && $has_sym) ) {
+            $errors[] = 'Password must be at least 8 characters and include a letter, a number, and a symbol.';
+        }
+
+        if ( !empty($errors) ) {
+            wp_safe_redirect( add_query_arg('sta_error', urlencode(implode(' ', $errors)), wp_get_referer() ?: site_url('/signup/')) );
+            exit;
+        }
+        // --- END SIMPLE VALIDATION ---
+
+        // Email already exists (keep AFTER format checks)
+        if ( email_exists( $email ) ) {
+            wp_safe_redirect( add_query_arg('sta_error', urlencode('Email already exists.'), wp_get_referer() ?: site_url('/signup/')) );
+            exit;
+        }
 
         // Generate unique custom portal user ID
         $last_id = get_option('sta_portal_last_user_id', 4500);
         $next_id = intval($last_id) + 1;
 
-        // Create user
+        // Create user (use email as username)
         $user_id = wp_create_user( $email, $password, $email );
         if ( is_wp_error( $user_id ) ) {
             wp_safe_redirect( add_query_arg('sta_error', urlencode($user_id->get_error_message()), wp_get_referer() ?: site_url('/signup/')) );
             exit;
         }
 
-        // Save display name and custom portal ID
+        // --- FIRST/LAST NAME UPGRADE: save names + display_name ---
+        $display = trim($first . ' ' . $last);
+        update_user_meta( $user_id, 'first_name', $first );
+        update_user_meta( $user_id, 'last_name',  $last );
         wp_update_user( array(
             'ID'           => $user_id,
-            'display_name' => $name
+            'display_name' => $display ?: $email,
         ) );
+
+        // Save custom portal ID
         update_user_meta( $user_id, 'portal_user_id', $next_id );
         update_option( 'sta_portal_last_user_id', $next_id );
 
@@ -145,14 +130,9 @@ if (!empty($errors)) {
         wp_safe_redirect( add_query_arg('sta_success', urlencode($msg), site_url('/login/')) );
         exit;
         /* --------------------- POINT 4 END --------------------- */
-
-        // (Old behavior removed)
-        // wp_set_current_user( $user_id );
-        // wp_set_auth_cookie( $user_id );
-        // wp_redirect( site_url('/dashboard/') );
-        // exit;
     }
 }
+
 
 
     // Handle lost password form

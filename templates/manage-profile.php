@@ -1,10 +1,15 @@
 <?php
+// templates/manage-profile.php
 $user_id   = get_current_user_id();
 $user      = wp_get_current_user();
 
 $avatar_id = intval(get_user_meta($user_id, 'sta_avatar_id', true));
 $avatar    = $avatar_id ? wp_get_attachment_image_url($avatar_id, 'thumbnail') : get_avatar_url($user_id);
 $member_id = get_user_meta($user_id, 'portal_user_id', true);
+
+// NEW: first/last name
+$fn = get_user_meta($user_id, 'first_name', true);
+$ln = get_user_meta($user_id, 'last_name',  true);
 
 // provider label
 $provider  = get_user_meta($user_id, 'sta_auth_provider', true) ?: 'local';
@@ -51,13 +56,36 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
     <h3 class="sta-section-title">Personal Details</h3>
 
     <div class="sta-grid">
-      <div class="sta-field">
-        <label>Name</label>
+      <!-- First name (NEW with consistent wrap + pencil) -->
+      <div class="sta-field half">
+        <label for="sta-first-name">First name</label>
         <div class="sta-input-wrap">
-          <input type="text" name="sta_full_name" value="<?php echo esc_attr($user->display_name); ?>" required>
-          <span class="sta-pencil">✎</span>
+          <input disabled type="text"
+                 id="sta-first-name"
+                 name="sta_first_name"
+                 value="<?php echo esc_attr($fn); ?>"
+                 required
+                 pattern="^[A-Za-z]+$"
+                 title="English letters only">
+          <span class="sta-pencil"></span>
         </div>
       </div>
+
+      <!-- Last name (NEW with consistent wrap + pencil) -->
+      <div class="sta-field half">
+        <label for="sta-last-name">Last name</label>
+        <div class="sta-input-wrap">
+          <input disabled type="text"
+                 id="sta-last-name"
+                 name="sta_last_name"
+                 value="<?php echo esc_attr($ln); ?>"
+                 required
+                 pattern="^[A-Za-z]+$"
+                 title="English letters only">
+          <span class="sta-pencil"></span>
+        </div>
+      </div>
+
       <div class="sta-field">
         <label>Job Title</label>
         <div class="sta-input-wrap">
@@ -65,6 +93,7 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
           <span class="sta-pencil">✎</span>
         </div>
       </div>
+
       <div class="sta-field">
         <label>Organization</label>
         <div class="sta-input-wrap">
@@ -72,17 +101,24 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
           <span class="sta-pencil">✎</span>
         </div>
       </div>
+
       <div class="sta-field">
         <label>Email</label>
         <div class="sta-input-wrap">
-          <input type="email" name="sta_email" value="<?php echo esc_attr($user->user_email); ?>" required>
-          <span class="sta-pencil">✎</span>
+          <input disabled type="email" name="sta_email" value="<?php echo esc_attr($user->user_email); ?>" required>
+          <span class="sta-pencil"></span>
         </div>
       </div>
+
       <div class="sta-field">
         <label>Phone Number</label>
         <div class="sta-input-wrap">
-          <input type="tel" name="sta_phone" value="<?php echo esc_attr($phone); ?>" placeholder="+14155551212" pattern="^\+[1-9]\d{7,14}$" title="Include country code, e.g. +14155551212">
+          <input type="tel"
+                 name="sta_phone"
+                 value="<?php echo esc_attr($phone); ?>"
+                 placeholder="+14155551212"
+                 pattern="^\+[1-9]\d{7,14}$"
+                 title="Include country code, e.g. +14155551212">
           <span class="sta-pencil">✎</span>
         </div>
       </div>
@@ -97,6 +133,7 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
           <span class="sta-pencil">✎</span>
         </div>
       </div>
+
       <div class="sta-field">
         <label>City</label>
         <div class="sta-input-wrap">
@@ -104,6 +141,7 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
           <span class="sta-pencil">✎</span>
         </div>
       </div>
+
       <div class="sta-field">
         <label>State/Province</label>
         <div class="sta-input-wrap">
@@ -111,6 +149,7 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
           <span class="sta-pencil">✎</span>
         </div>
       </div>
+
       <div class="sta-field">
         <label>Country</label>
         <div class="sta-input-wrap">
@@ -118,6 +157,7 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
           <span class="sta-pencil">✎</span>
         </div>
       </div>
+
       <div class="sta-field">
         <label>Postal Code</label>
         <div class="sta-input-wrap">

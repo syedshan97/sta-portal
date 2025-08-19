@@ -33,6 +33,12 @@ class STA_Portal_Hooks {
         add_filter('rest_attachment_query',       array($this, 'restrict_media_to_author_rest'), 10, 2);
         add_action('add_attachment',              array($this, 'ensure_attachment_author'));
 
+        add_action('wp_login', function($user_login, $user){
+        // store as timestamp for easy formatting later
+        update_user_meta($user->ID, 'sta_last_login', current_time('timestamp'));
+         }, 10, 2);
+
+
         
     }
 

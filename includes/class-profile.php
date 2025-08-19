@@ -18,64 +18,91 @@ class STA_Portal_Profile {
     }
 
     public function handle_profile_save() {
-        $back = wp_get_referer() ?: site_url('/manage-profile/');
+    $back = wp_get_referer() ?: site_url('/manage-profile/');
 
-        if ( empty($_POST['sta_profile_nonce']) || ! wp_verify_nonce($_POST['sta_profile_nonce'], 'sta_profile_save') ) {
-            wp_safe_redirect( add_query_arg('sta_error', urlencode('Security check failed.'), $back) );
-            exit;
-        }
-
-        $user_id = get_current_user_id();
-        if (!$user_id) { $this->redirect_login(); }
-
-        $errors = [];
-
-        // Full name
-        $full_name = sanitize_text_field($_POST['sta_full_name'] ?? '');
-        if ($full_name === '') $errors[] = 'Name is required.';
-
-        // Email + uniqueness
-        $email = sanitize_email($_POST['sta_email'] ?? '');
-        if (!is_email($email)) {
-            $errors[] = 'Please enter a valid email address.';
-        } else {
-            $existing = get_user_by('email', $email);
-            if ($existing && intval($existing->ID) !== intval($user_id)) {
-                $errors[] = 'This email is already used by another account.';
-            }
-        }
-
-        // Phone (E.164)
-        $phone = trim($_POST['sta_phone'] ?? '');
-        if ($phone !== '' && !preg_match('/^\+[1-9]\d{7,14}$/', $phone)) {
-            $errors[] = 'Phone must include country code, e.g. +14155551212.';
-        }
-
-        if ($errors) {
-            wp_safe_redirect( add_query_arg('sta_error', urlencode(implode(' ', $errors)), $back) );
-            exit;
-        }
-
-        // Core fields
-        wp_update_user([
-            'ID'           => $user_id,
-            'display_name' => $full_name,
-            'user_email'   => $email,
-        ]);
-
-        // Meta
-        update_user_meta($user_id, 'sta_job_title',    sanitize_text_field($_POST['sta_job_title'] ?? ''));
-        update_user_meta($user_id, 'sta_org',          sanitize_text_field($_POST['sta_org'] ?? ''));
-        update_user_meta($user_id, 'sta_phone',        $phone);
-        update_user_meta($user_id, 'sta_addr_street',  sanitize_text_field($_POST['sta_addr_street'] ?? ''));
-        update_user_meta($user_id, 'sta_addr_city',    sanitize_text_field($_POST['sta_addr_city'] ?? ''));
-        update_user_meta($user_id, 'sta_addr_state',   sanitize_text_field($_POST['sta_addr_state'] ?? ''));
-        update_user_meta($user_id, 'sta_addr_country', sanitize_text_field($_POST['sta_addr_country'] ?? ''));
-        update_user_meta($user_id, 'sta_addr_postal',  sanitize_text_field($_POST['sta_addr_postal'] ?? ''));
-
-        wp_safe_redirect( add_query_arg('sta_success', urlencode('Profile updated successfully.'), $back) );
+    if ( empty($_POST['sta_profile_nonce']) || ! wp_verify_nonce($_POST['sta_profile_nonce'], 'sta_profile_save') ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('Security check failed.'), $back) );
         exit;
     }
+
+    $user_id = get_current_user_id();
+    if ( ! $user_id ) { $this->redirect_login(); }
+
+    $errors = [];
+
+    /* ---------------- First / Last name (NEW) ---------------- */
+    $first = sanitize_text_field( $_POST['sta_first_name'] ?? '' );
+    $last  = sanitize_text_field( $_POST['sta_last_name']  ?? '' );
+
+    if ( $first === '' || !preg_match('/^[A-Za-z]+$/', $first) ) {
+        $errors[] = 'First name is required (English letters only).';
+    }
+    if ( $last === '' || !preg_match('/^[A-Za-z]+$/', $last) ) {
+        $errors[] = 'Last name is required (English letters only).';
+    }
+    $display = trim($first . ' ' . $last);
+    /* --------------------------------------------------------- */
+
+    // Email + uniqueness
+    $email = sanitize_email($_POST['sta_email'] ?? '');
+    if ( ! is_email($email) ) {
+        $errors[] = 'Please enter a valid email address.';
+    } else {
+        $existing = get_user_by('email', $email);
+        if ( $existing && intval($existing->ID) !== intval($user_id) ) {
+            $errors[] = 'This email is already used by another account.';
+        }
+    }
+
+    // Phone (E.164)
+    $phone = trim($_POST['sta_phone'] ?? '');
+    if ( $phone !== '' && !preg_match('/^\+[1-9]\d{7,14}$/', $phone) ) {
+        $errors[] = 'Phone must include country code, e.g. +14155551212.';
+    }
+
+    if ( $errors ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode(implode(' ', $errors)), $back) );
+        exit;
+    }
+
+    // Track email change for re-verification
+    $old_email = $user_id ? get_userdata($user_id)->user_email : '';
+    $changing_email = ( strtolower(trim($old_email)) !== strtolower(trim($email)) );
+
+    /* ------------ Core fields: display_name + email ---------- */
+    wp_update_user([
+        'ID'           => $user_id,
+        'display_name' => $display ?: $email,  // keep a sensible fallback
+        'user_email'   => $email,
+    ]);
+
+    // Store first/last in native WP meta
+    update_user_meta($user_id, 'first_name', $first);
+    update_user_meta($user_id, 'last_name',  $last);
+    /* --------------------------------------------------------- */
+
+    // If email changed → mark unverified and send a new verification email
+    if ( $changing_email ) {
+        update_user_meta($user_id, 'sta_email_verified', 0);
+        if ( class_exists('STA_Portal_Email_Verification') ) {
+            STA_Portal_Email_Verification::send_verification_email( $user_id, $email );
+        }
+    }
+
+    // Other meta (kept as-is)
+    update_user_meta($user_id, 'sta_job_title',    sanitize_text_field($_POST['sta_job_title'] ?? ''));
+    update_user_meta($user_id, 'sta_org',          sanitize_text_field($_POST['sta_org'] ?? ''));
+    update_user_meta($user_id, 'sta_phone',        $phone);
+    update_user_meta($user_id, 'sta_addr_street',  sanitize_text_field($_POST['sta_addr_street'] ?? ''));
+    update_user_meta($user_id, 'sta_addr_city',    sanitize_text_field($_POST['sta_addr_city'] ?? ''));
+    update_user_meta($user_id, 'sta_addr_state',   sanitize_text_field($_POST['sta_addr_state'] ?? ''));
+    update_user_meta($user_id, 'sta_addr_country', sanitize_text_field($_POST['sta_addr_country'] ?? ''));
+    update_user_meta($user_id, 'sta_addr_postal',  sanitize_text_field($_POST['sta_addr_postal'] ?? ''));
+
+    wp_safe_redirect( add_query_arg('sta_success', urlencode('Profile updated successfully.'), $back) );
+    exit;
+}
+
 
     public function ajax_save_avatar() {
         if ( ! isset($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'sta_profile_avatar') ) {
