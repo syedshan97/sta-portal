@@ -1,5 +1,5 @@
 <?php
-// templates/reset-password.php (or your reset template)
+// templates/reset-password-form.php (or your reset template)
 $error = isset($_GET['sta_error']) ? urldecode($_GET['sta_error']) : '';
 
 // somewhere you enqueue assets

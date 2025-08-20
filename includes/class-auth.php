@@ -6,9 +6,12 @@ class STA_Portal_Auth {
     public function __construct() {
         add_action( 'init', array( $this, 'handle_login_form' ) );
         add_action( 'init', array( $this, 'handle_signup_form' ) );
-        add_action( 'init', array( $this, 'handle_lost_password_form' ) );
-        add_action( 'init', array( $this, 'handle_reset_password_form' ) );
+	//	add_action( 'init', array( $this, 'handle_lost_password_form' ) );
+    //  add_action( 'init', array( $this, 'handle_reset_password_form' ) );
         add_filter('authenticate', array($this, 'block_unverified_local_on_auth'), 30, 3);
+        add_action('template_redirect', array($this, 'handle_lost_password_form'));
+        add_action('template_redirect', array($this, 'handle_reset_password_form'));
+
 
 
     }
@@ -33,9 +36,8 @@ class STA_Portal_Auth {
         }
     }
 
-    
 
-   public function handle_signup_form() {
+	public function handle_signup_form() {
     if ( isset($_POST['sta_portal_signup_nonce']) && wp_verify_nonce($_POST['sta_portal_signup_nonce'], 'sta_portal_signup') ) {
 
         // --- FIRST/LAST NAME UPGRADE: collect inputs ---
@@ -55,7 +57,6 @@ if ( $first === '' || !preg_match($NAME_RE, $first) ) {
 if ( $last === '' || !preg_match($NAME_RE, $last) ) {
     $errors[] = 'Last name: use English letters and spaces only.';
 }
-
 
         // Email: required + valid format
         if ( $email === '' || !is_email($email) ) {
@@ -134,51 +135,156 @@ if ( $last === '' || !preg_match($NAME_RE, $last) ) {
 }
 
 
-
-    // Handle lost password form
 public function handle_lost_password_form() {
-    if ( isset( $_POST['sta_portal_lostpass_nonce'] ) && wp_verify_nonce( $_POST['sta_portal_lostpass_nonce'], 'sta_portal_lostpass' ) ) {
-        $user_login = sanitize_text_field( $_POST['sta_lostpass_email'] );
-        $user = get_user_by( 'email', $user_login );
-        if ( ! $user ) {
-            wp_redirect( add_query_arg('sta_error', urlencode('No account found with that email.'), wp_get_referer() ) );
-            exit;
-        }
-        // Generate reset key and send email using WP's process
-        $reset_key = get_password_reset_key( $user );
-        $reset_url = site_url( '/reset-password/?key=' . $reset_key . '&login=' . rawurlencode( $user->user_login ) );
-        // Use WP default email template (for simplicity) or build your own
-        $message = "Someone requested a password reset for the following account: \r\n\r\n";
-        $message .= "Username: " . $user->user_login . "\r\n";
-        $message .= "If this was a mistake, just ignore this email.\r\n";
-        $message .= "To reset your password, visit the following address: " . $reset_url;
-        wp_mail( $user->user_email, 'Password Reset Request', $message );
-        wp_redirect( add_query_arg('sta_success', urlencode('Check your email for the password reset link.'), wp_get_referer() ) );
+    // Only handle POSTs to /forgot-password/
+    if ( 'POST' !== ($_SERVER['REQUEST_METHOD'] ?? '') ) return;
+    if ( ! function_exists('is_page') || ! is_page('forgot-password') ) return; // adjust slug if needed
+
+    $forgot_url = site_url('/forgot-password/');
+
+    // Nonce
+    if ( empty($_POST['sta_portal_lostpass_nonce']) ||
+         ! wp_verify_nonce($_POST['sta_portal_lostpass_nonce'], 'sta_portal_lostpass') ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('Security check failed.'), $forgot_url) );
         exit;
     }
+
+    // Input
+    $email = sanitize_email( $_POST['sta_lostpass_email'] ?? '' );
+    if ( ! is_email($email) ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('Please enter a valid email address.'), $forgot_url) );
+        exit;
+    }
+
+    // Generic success message (prevents account enumeration)
+    $ok_msg = 'If an account exists for that email, we have sent a password reset link.';
+
+    // Try to send email only if user exists
+    $user = get_user_by('email', $email);
+    if ( $user && ! is_wp_error($user) ) {
+        $reset_key = get_password_reset_key( $user );
+        if ( ! is_wp_error($reset_key) ) {
+            $reset_url = add_query_arg(
+                array(
+                    'key'   => $reset_key,
+                    'login' => rawurlencode( $user->user_login ),
+                ),
+                site_url('/reset-password/')
+            );
+
+            // Build email
+            $subject = 'Password Reset Request';
+            $message  = "Someone requested a password reset for the following account:\r\n\r\n";
+            $message .= "Username: {$user->user_login}\r\n";
+            $message .= "If this was a mistake, ignore this email.\r\n\r\n";
+            $message .= "To reset your password, visit:\r\n{$reset_url}\r\n";
+
+            // Headers: set a valid From and content type
+            $from_email = 'no-reply@' . preg_replace('/^www\./','', parse_url(home_url(), PHP_URL_HOST));
+            $headers = array(
+                'Content-Type: text/plain; charset=UTF-8',
+                'From: Systems Thinking Alliance <' . $from_email . '>',
+            );
+
+            $sent = wp_mail( $user->user_email, $subject, $message, $headers );
+
+            // Optional debug if sending fails
+            if ( ! $sent && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
+                error_log('[STA Portal] wp_mail failed during lost password for: ' . $email);
+            }
+        } else {
+            // Optional: log why reset key failed
+            if ( defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
+                error_log('[STA Portal] get_password_reset_key error: ' . $reset_key->get_error_message());
+            }
+        }
+    }
+
+    // Always say success to the user
+    wp_safe_redirect( add_query_arg('sta_success', urlencode($ok_msg), $forgot_url) );
+    exit;
 }
 
-// Handle reset password form
+
 public function handle_reset_password_form() {
-    if ( isset( $_POST['sta_portal_resetpass_nonce'] ) && wp_verify_nonce( $_POST['sta_portal_resetpass_nonce'], 'sta_portal_resetpass' ) ) {
-        $key   = sanitize_text_field( $_POST['reset_key'] );
-        $login = sanitize_text_field( $_POST['reset_login'] );
-        $pass1 = $_POST['sta_new_pass1'];
-        $pass2 = $_POST['sta_new_pass2'];
-        if ( $pass1 !== $pass2 ) {
-            wp_redirect( add_query_arg('sta_error', urlencode('Passwords do not match.'), wp_get_referer() ) );
-            exit;
-        }
-        $user = check_password_reset_key( $key, $login );
-        if ( is_wp_error( $user ) ) {
-            wp_redirect( add_query_arg('sta_error', urlencode('Invalid reset link. Please try again.'), site_url('/forgot-password/') ) );
-            exit;
-        }
-        reset_password( $user, $pass1 );
-        wp_redirect( add_query_arg('sta_success', urlencode('Your password has been reset. Please log in.'), site_url('/login/') ) );
+    // Only handle POSTs and only on reset-password URL
+    if ( 'POST' !== ($_SERVER['REQUEST_METHOD'] ?? '') ) return;
+    $req_path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    if ( false === strpos($req_path, '/reset-password') ) return;
+
+    // Nonce
+    if ( empty($_POST['sta_portal_resetpass_nonce']) ||
+         ! wp_verify_nonce($_POST['sta_portal_resetpass_nonce'], 'sta_portal_resetpass') ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('Security check failed.'), site_url('/reset-password/')) );
         exit;
     }
+
+    // Inputs (accept BOTH naming schemes; unslash + trim)
+    $key   = sanitize_text_field( wp_unslash( $_POST['reset_key']   ?? '' ) );
+    $login = sanitize_text_field( wp_unslash( $_POST['reset_login'] ?? '' ) );
+    $p1    = (string) trim( wp_unslash( $_POST['sta_new_pass1']   ?? ($_POST['sta_reset_pass1']   ?? '') ) );
+    $p2    = (string) trim( wp_unslash( $_POST['sta_new_pass2']   ?? ($_POST['sta_reset_pass2']   ?? '') ) );
+
+    // URL back to same reset form (preserve key/login)
+    $reset_url = add_query_arg(array('key' => $key, 'login' => $login), site_url('/reset-password/'));
+
+    if ( $key === '' || $login === '' ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('Invalid or expired reset link. Please request a new one.'), site_url('/forgot-password/')) );
+        exit;
+    }
+    if ( $p1 === '' || $p2 === '' ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('Please enter your new password in both fields.'), $reset_url) );
+        exit;
+    }
+    if ( $p1 !== $p2 ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('Passwords do not match.'), $reset_url) );
+        exit;
+    }
+
+    // === Complexity (match the checklist): 8+, UPPER, lower, number, symbol (no < or >)
+    $okLen   = strlen($p1) >= 8;
+    $okUpper = (bool) preg_match('/[A-Z]/', $p1);
+    $okLower = (bool) preg_match('/[a-z]/', $p1);
+    $okDigit = (bool) preg_match('/\d/',    $p1);
+    $okSym   = (bool) preg_match('/[^A-Za-z0-9]/', $p1) && !preg_match('/[<>]/', $p1);
+
+    if ( !($okLen && $okUpper && $okLower && $okDigit && $okSym) ) {
+        $missing = array();
+        if (!$okLen)   $missing[] = '8+ characters';
+        if (!$okUpper) $missing[] = 'an uppercase letter';
+        if (!$okLower) $missing[] = 'a lowercase letter';
+        if (!$okDigit) $missing[] = 'a number';
+        if (!$okSym)   $missing[] = 'a special character (not < or >)';
+        $msg = 'Password does not meet the requirements: missing ' . implode(', ', $missing) . '.';
+        wp_safe_redirect( add_query_arg('sta_error', urlencode($msg), $reset_url) );
+        exit;
+    }
+    // === End complexity
+
+    // Validate key/login, get user
+    $user = check_password_reset_key( $key, $login );
+    if ( is_wp_error($user) ) {
+        $msg = ($user->get_error_code() === 'expired_key')
+            ? 'Reset link expired. Please request a new one.'
+            : 'Invalid reset link. Please request a new one.';
+        wp_safe_redirect( add_query_arg('sta_error', urlencode($msg), site_url('/forgot-password/')) );
+        exit;
+    }
+
+    // Core reset
+    reset_password( $user, $p1 );
+    update_user_meta( $user->ID, 'sta_last_password_change', current_time('timestamp') );
+
+    // Success -> Login
+    wp_safe_redirect( add_query_arg('sta_success', urlencode('Your password has been reset. Please log in.'), site_url('/login/')) );
+    exit;
 }
+
+
+
+
+
+
 
 /**
  * Block email/password login for unverified "local" users.
@@ -225,4 +331,5 @@ public function block_unverified_local_on_auth( $user, $username, $password ) {
 }
 
 
+	
 }
