@@ -131,3 +131,100 @@
     }
   });
 })();
+
+// ==== RESET PASSWORD PAGE ====
+(function(){
+  var form = document.getElementById('sta-reset-form');
+  if (!form) return;
+
+  var p1 = document.getElementById('sta-reset-pass1');
+  var p2 = document.getElementById('sta-reset-pass2');
+  var confirmMsg = document.getElementById('msg-reset-confirm');
+
+  function validatePasswordGeneric(inputEl, wrapId, live){
+    var v = (inputEl.value || '');
+    var okLen   = v.length >= 8;
+    var okUpper = /[A-Z]/.test(v);
+    var okLower = /[a-z]/.test(v);
+    var okDigit = /\d/.test(v);
+    var okSym   = /[^A-Za-z0-9]/.test(v) && !/[<>]/.test(v);
+    var allOk   = okLen && okUpper && okLower && okDigit && okSym;
+
+    var wrap = document.getElementById(wrapId);
+    if (wrap){
+      var rules = { len:okLen, upper:okUpper, lower:okLower, num:okDigit, sym:okSym };
+      Object.keys(rules).forEach(function(key){
+        var li = wrap.querySelector('[data-rule="'+key+'"]');
+        if (li){ li.classList.toggle('pass', !!rules[key]); }
+      });
+      wrap.classList.toggle('is-ok', allOk);
+    }
+
+    inputEl.classList.toggle('is-valid', allOk);
+    var field = inputEl.closest('.sta-field');
+    if (field){
+      field.classList.toggle('has-valid', allOk);
+      if (!allOk && !live) field.classList.add('has-error'); else field.classList.remove('has-error');
+    }
+    return allOk;
+  }
+
+  function validateP1(live){ return validatePasswordGeneric(p1, 'msg-password-reset', live); }
+
+function validateP2() {
+  var v1 = (p1.value || '');
+  var v2 = (p2.value || '');
+  var same = v2 !== '' && v2 === v1;
+
+  // message element under confirm field
+  if (confirmMsg) {
+    if (same) {
+       confirmMsg.textContent = 'Password matched.';
+       confirmMsg.classList.add('ok');
+    } else {
+       confirmMsg.textContent = v2 ? 'Passwords do not match.' : '';
+       confirmMsg.classList.remove('ok');
+    }
+  }
+
+  // field/input styling
+  var field = p2.closest('.sta-field');
+  if (same) {
+    p2.classList.add('is-valid');
+    p2.classList.remove('is-error');
+    if (field) { field.classList.add('has-valid'); field.classList.remove('has-error'); }
+  } else {
+    p2.classList.remove('is-valid');
+    if (field) {
+      if (v2) { field.classList.add('has-error'); }
+      else { field.classList.remove('has-error'); }
+      field.classList.remove('has-valid');
+    }
+  }
+
+  return same;
+}
+
+
+  // live events
+  p1.addEventListener('input', function(){ validateP1(true); validateP2(); });
+  p2.addEventListener('input', validateP2);
+
+  // init once (in case of autofill)
+  document.addEventListener('DOMContentLoaded', function(){
+    validateP1(true);
+    validateP2();
+  });
+
+  // submit guard
+  form.addEventListener('submit', function(e){
+    var ok1 = validateP1(false);
+    var ok2 = validateP2();
+    if (!(ok1 && ok2)){
+      e.preventDefault(); e.stopPropagation();
+      if (!ok1) { p1.focus(); } else { p2.focus(); }
+    }
+  });
+})();
+
+
