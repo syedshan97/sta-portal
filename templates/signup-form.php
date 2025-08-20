@@ -77,14 +77,36 @@ $sta_success = isset($_GET['sta_success'])
           <small class="sta-field-msg" id="msg-email"></small>
         </div>
 
-        <!-- Password -->
+                <!-- Password -->
         <label for="sta-signup-password">Password</label>
-        <div class="sta-field" id="field-password">
-          <input id="sta-signup-password" type="password" name="sta_signup_password" autocomplete="new-password" required />
-          <small class="sta-field-msg info" id="msg-password">
-            Password must be at least 8 characters and include a letter, a number, and a symbol.
-          </small>
-        </div>
+<div class="sta-field" id="field-password">
+  <input id="sta-signup-password" type="password" name="sta_signup_password" autocomplete="new-password" required />
+
+  <!-- Password Requirements Checklist -->
+ <div class="sta-pw-requirements" id="msg-password" aria-live="polite">
+  <div class="sta-pw-title">
+    <span class="sta-ico-key" aria-hidden="true">🔑</span>
+    Password Requirements
+  </div>
+  <ul class="sta-pw-list">
+    <li data-rule="len">8 characters minimum</li>
+    <li data-rule="upper">one uppercase letter</li>
+    <li data-rule="lower">one lowercase letter</li>
+    <li data-rule="num">one number</li>
+    <li data-rule="sym">one special character (no &lt;&gt;)</li>
+  </ul>
+</div>
+</div>
+
+<!-- Consent note (before the button) -->
+
+<small class="sta-consent-note">By clicking the download button below, you consent to allow Systems Thinking Alliance to store and process your information and send you communications, which you can unsubscribe from at any time.​
+</small>
+<small class="sta-consent-note">
+  We are committed to protecting and respecting your privacy, please review our
+  <a href="https://systemsthinkingalliance.org/privacy-policy/" target="_blank" rel="noopener">Privacy Policy</a>.
+</small>
+        
 
         <button type="submit">Sign Up</button>
     </form>

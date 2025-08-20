@@ -186,3 +186,70 @@ input.is-valid{ border:1px solid #16a34a; }
 #sta-signup-form input.is-valid{ border:1px solid #16a34a !important; }
 
 /** Name, Email and Password Validation Code END **/
+
+/* === Signup page: Password checklist (hard specificity + !important) === */
+.sta-portal-signup-form .sta-pw-requirements {
+  margin-top: 8px !important;
+  border: 1px solid #e7ebf2 !important;
+  background: #f9fbff !important;
+  border-radius: 10px !important;
+  padding: 10px 12px !important;
+  font-size: .92rem !important;
+  color: #374151 !important;
+}
+.sta-portal-signup-form .sta-pw-requirements.is-ok {
+  border-color: #b7eb8f !important;
+  background: #f6ffed !important;
+}
+.sta-portal-signup-form .sta-pw-title {
+  font-weight: 600 !important;
+  margin-bottom: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: #111827 !important;
+}
+.sta-portal-signup-form .sta-pw-list {
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+.sta-portal-signup-form .sta-pw-list li {
+  position: relative !important;
+  padding-left: 22px !important;
+  margin: 6px 0 !important;
+  color: #6b7280 !important;
+}
+.sta-portal-signup-form .sta-pw-list li::before {
+  content: "•" !important;               /* default bullet */
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  line-height: 1.25 !important;
+  color: #9ca3af !important;
+}
+
+/* Passed rule: make item green + show ✓ */
+.sta-portal-signup-form .sta-pw-list li.pass {
+  color: #106a2b !important;
+}
+.sta-portal-signup-form .sta-pw-list li.pass::before {
+  content: "\2713" !important;           /* ✓ */
+  color: #106a2b !important;
+  font-weight: 700 !important;
+}
+
+/* Consent note (signup-only) */
+.sta-portal-signup-form .sta-consent-note {
+  display: block !important;
+  margin: 12px 0 10px !important;
+  font-size: .85rem !important;
+  color: #6b7280 !important;
+  line-height: 1.35 !important;
+}
+.sta-portal-signup-form .sta-consent-note a {
+  text-decoration: underline !important;
+}
+
+
+

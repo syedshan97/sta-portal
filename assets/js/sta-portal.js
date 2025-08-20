@@ -65,31 +65,48 @@
     return true;
   }
 
-  function validatePassword(live) {
-    var v = passInput.value || '';
-    var okLen   = v.length >= 8;
-    var okAlpha = /[A-Za-z]/.test(v);
-    var okDigit = /\d/.test(v);
-    var okSym   = /[^A-Za-z0-9]/.test(v);
-    var ok = okLen && okAlpha && okDigit && okSym;
+    function validatePassword(live) {
+  var v = passInput.value || '';
 
-    if (ok) {
-      setOk(passInput, passMsg, 'Looks good.');
-      passMsg.classList.add('is-ok'); // force green style on message
-    } else {
-      passInput.classList.remove('is-valid');
-      passMsg.classList.remove('is-ok');
-      if (live) {
-        // Keep hint while typing
-        passMsg.textContent = 'Password must be at least 8 characters and include a letter, a number, and a symbol.';
-        var wrap = passInput.closest('.sta-field');
-        if (wrap) wrap.classList.remove('has-error','has-valid');
-      } else {
-        setErr(passInput, passMsg, 'Password must be at least 8 characters and include a letter, a number, and a symbol.');
+  // Rules
+  var okLen   = v.length >= 8;
+  var okUpper = /[A-Z]/.test(v);
+  var okLower = /[a-z]/.test(v);
+  var okDigit = /\d/.test(v);
+  var okSym   = /[^A-Za-z0-9]/.test(v) && !/[<>]/.test(v); // exclude < >
+
+  var allOk = okLen && okUpper && okLower && okDigit && okSym;
+
+  // Update the checklist safely
+  var wrap = document.getElementById('msg-password');
+  if (wrap) {
+    var rules = {
+      len:   okLen,
+      upper: okUpper,
+      lower: okLower,
+      num:   okDigit,
+      sym:   okSym
+    };
+    Object.keys(rules).forEach(function(key){
+      var item = wrap.querySelector('[data-rule="' + key + '"]');
+      if (item) {
+        item.classList.toggle('pass', !!rules[key]);
+        item.setAttribute('aria-checked', rules[key] ? 'true' : 'false');
       }
-    }
-    return ok;
+    });
+    wrap.classList.toggle('is-ok', allOk);
   }
+
+  // Keep previous field-level styling
+  passInput.classList.toggle('is-valid', allOk);
+  var field = passInput.closest('.sta-field');
+  if (field) {
+    field.classList.toggle('has-valid', allOk);
+    if (!allOk && !live) field.classList.add('has-error'); else field.classList.remove('has-error');
+  }
+
+  return allOk;
+}
 
   // Live validation
   firstInput.addEventListener('input', validateFirst);
