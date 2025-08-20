@@ -41,7 +41,7 @@
   function validateFirst() {
     var v = (firstInput.value || '').trim();
     if (!v) { setErr(firstInput, firstMsg, 'First name is required.'); return false; }
-    if (!/^[A-Za-z]+$/.test(v)) { setErr(firstInput, firstMsg, 'Use English letters only.'); return false; }
+    if (!/^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$/.test(v)) { setErr(firstInput, firstMsg, 'Use English letters, spaces & hyphens/apostrophes only.'); return false; }
     setOk(firstInput, firstMsg, '');
     return true;
   }
@@ -49,7 +49,7 @@
   function validateLast() {
     var v = (lastInput.value || '').trim();
     if (!v) { setErr(lastInput, lastMsg, 'Last name is required.'); return false; }
-    if (!/^[A-Za-z]+$/.test(v)) { setErr(lastInput, lastMsg, 'Use English letters only.'); return false; }
+    if (!/^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$/.test(v)) { setErr(lastInput, lastMsg, 'Use English letters, spaces & hyphens/apostrophes only.'); return false; }
     setOk(lastInput, lastMsg, '');
     return true;
   }

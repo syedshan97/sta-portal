@@ -47,15 +47,15 @@ class STA_Portal_Auth {
         // --- SIMPLE VALIDATION (server-side) ---
         $errors = [];
 
-        // First name: required, English letters only
-        if ( $first === '' || !preg_match('/^[A-Za-z]+$/', $first) ) {
-            $errors[] = 'First name is required (English letters only).';
-        }
+        $NAME_RE = "/^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$/"; // letters with optional internal space/'/-
 
-        // Last name: required, English letters only
-        if ( $last === '' || !preg_match('/^[A-Za-z]+$/', $last) ) {
-            $errors[] = 'Last name is required (English letters only).';
-        }
+if ( $first === '' || !preg_match($NAME_RE, $first) ) {
+    $errors[] = 'First name: use English letters and spaces only.';
+}
+if ( $last === '' || !preg_match($NAME_RE, $last) ) {
+    $errors[] = 'Last name: use English letters and spaces only.';
+}
+
 
         // Email: required + valid format
         if ( $email === '' || !is_email($email) ) {

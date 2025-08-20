@@ -60,13 +60,8 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
       <div class="sta-field half">
         <label for="sta-first-name">First name</label>
         <div class="sta-input-wrap">
-          <input disabled type="text"
-                 id="sta-first-name"
-                 name="sta_first_name"
-                 value="<?php echo esc_attr($fn); ?>"
-                 required
-                 pattern="^[A-Za-z]+$"
-                 title="English letters only">
+        <input type="text" id="sta-first-name" name="sta_first_name" value="<?php echo esc_attr($fn); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)">
+
           <span class="sta-pencil"></span>
         </div>
       </div>
@@ -75,13 +70,8 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
       <div class="sta-field half">
         <label for="sta-last-name">Last name</label>
         <div class="sta-input-wrap">
-          <input disabled type="text"
-                 id="sta-last-name"
-                 name="sta_last_name"
-                 value="<?php echo esc_attr($ln); ?>"
-                 required
-                 pattern="^[A-Za-z]+$"
-                 title="English letters only">
+        <input type="text" id="sta-last-name" name="sta_last_name" value="<?php echo esc_attr($ln); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)">
+
           <span class="sta-pencil"></span>
         </div>
       </div>

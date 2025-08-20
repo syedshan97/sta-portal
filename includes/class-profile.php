@@ -34,12 +34,15 @@ class STA_Portal_Profile {
     $first = sanitize_text_field( $_POST['sta_first_name'] ?? '' );
     $last  = sanitize_text_field( $_POST['sta_last_name']  ?? '' );
 
-    if ( $first === '' || !preg_match('/^[A-Za-z]+$/', $first) ) {
-        $errors[] = 'First name is required (English letters only).';
-    }
-    if ( $last === '' || !preg_match('/^[A-Za-z]+$/', $last) ) {
-        $errors[] = 'Last name is required (English letters only).';
-    }
+   $NAME_RE = "/^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$/"; // letters with optional internal space/'/-
+
+if ( $first === '' || !preg_match($NAME_RE, $first) ) {
+    $errors[] = 'First name: use English letters and spaces only.';
+}
+if ( $last === '' || !preg_match($NAME_RE, $last) ) {
+    $errors[] = 'Last name: use English letters and spaces only.';
+}
+
     $display = trim($first . ' ' . $last);
     /* --------------------------------------------------------- */
 
