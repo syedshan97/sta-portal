@@ -302,4 +302,3 @@ input.is-valid{ border:1px solid #16a34a; }
 }
 .sta-profile .is-locked:focus{ outline:none !important; box-shadow:none !important; }
 .sta-profile .is-locked + .sta-pencil{ display:none !important; }
-

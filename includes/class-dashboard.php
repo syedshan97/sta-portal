@@ -43,7 +43,7 @@ class STA_Portal_Dashboard {
         $user_id = $user->ID;
 
         $portal_id = get_user_meta($user_id, 'portal_user_id', true);
-        $job_title = get_user_meta($user_id, 'sta_title', true);
+        $job_title = get_user_meta($user_id, 'sta_job_title', true);
         $org       = get_user_meta($user_id, 'sta_org', true);
 
         $avatar_id = intval( get_user_meta($user_id, 'sta_avatar_id', true) );
