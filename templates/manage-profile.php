@@ -27,6 +27,10 @@ $addr_postal = get_user_meta($user_id, 'sta_addr_postal', true);
 
 $error   = isset($_GET['sta_error']) ? urldecode($_GET['sta_error']) : '';
 $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
+
+$lock_identity = true;
+
+
 ?>
 <div class="sta-profile sta-profile--wide">
   <?php if ($error): ?><div class="sta-alert sta-alert--error"><?php echo esc_html($error); ?></div><?php endif; ?>
@@ -60,9 +64,7 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
       <div class="sta-field half">
         <label for="sta-first-name">First name</label>
         <div class="sta-input-wrap">
-        <input type="text" id="sta-first-name" name="sta_first_name" value="<?php echo esc_attr($fn); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)">
-
-          <span class="sta-pencil"></span>
+<input type="text" id="sta-first-name" name="sta_first_name" value="<?php echo esc_attr($fn); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)" <?php echo $lock_identity ? 'readonly aria-readonly="true" class="is-locked"' : ''; ?> >          <span class="sta-pencil"></span>
         </div>
       </div>
 
@@ -70,8 +72,8 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
       <div class="sta-field half">
         <label for="sta-last-name">Last name</label>
         <div class="sta-input-wrap">
-        <input type="text" id="sta-last-name" name="sta_last_name" value="<?php echo esc_attr($ln); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)">
-
+         <!--<input type="text" id="sta-last-name" name="sta_last_name" value="<?php echo esc_attr($ln); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)">-->
+         <input type="text" id="sta-last-name" name="sta_last_name" value="<?php echo esc_attr($ln); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)" <?php echo $lock_identity ? 'readonly aria-readonly="true" class="is-locked"' : ''; ?> >
           <span class="sta-pencil"></span>
         </div>
       </div>
@@ -95,7 +97,8 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
       <div class="sta-field">
         <label>Email</label>
         <div class="sta-input-wrap">
-          <input disabled type="email" name="sta_email" value="<?php echo esc_attr($user->user_email); ?>" required>
+          <!--<input type="email" name="sta_email" value="<?php echo esc_attr($user->user_email); ?>" required>-->
+          <input type="email" name="sta_email" value="<?php echo esc_attr($user->user_email); ?>" required <?php echo $lock_identity ? 'readonly aria-readonly="true" class="is-locked"' : ''; ?> >
           <span class="sta-pencil"></span>
         </div>
       </div>

@@ -130,7 +130,7 @@
   background: #e9faf1;
 }
 
-/** Name, Email and Password Validation Code START **/
+/** Name, Email and Password Validation Code Start **/
 
 /* Inline field messages (signup) */
 .sta-field-msg{
@@ -184,8 +184,6 @@ input.is-valid{ border:1px solid #16a34a; }
 /* Ensure error/valid borders show even if theme overrides */
 #sta-signup-form input.is-error{ border:1px solid #dc2626 !important; }
 #sta-signup-form input.is-valid{ border:1px solid #16a34a !important; }
-
-/** Name, Email and Password Validation Code END **/
 
 /* === Signup page: Password checklist (hard specificity + !important) === */
 .sta-portal-signup-form .sta-pw-requirements {
@@ -294,8 +292,14 @@ input.is-valid{ border:1px solid #16a34a; }
   box-shadow: inset 0 0 0 1px #10b981 !important;
 }
 
+/* Code for Disbaled Input Fields on Manage Profile */
 
-
-
-
+.sta-profile .is-locked{
+  background:#f5f7fb !important;
+  color:#6b7280 !important;
+  cursor:not-allowed !important;
+  pointer-events:none !important; /* blocks the caret */
+}
+.sta-profile .is-locked:focus{ outline:none !important; box-shadow:none !important; }
+.sta-profile .is-locked + .sta-pencil{ display:none !important; }
 
