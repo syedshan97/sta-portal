@@ -32,11 +32,24 @@ class STA_Portal_Hooks {
         add_filter('ajax_query_attachments_args', array($this, 'restrict_media_to_author'));
         add_filter('rest_attachment_query',       array($this, 'restrict_media_to_author_rest'), 10, 2);
         add_action('add_attachment',              array($this, 'ensure_attachment_author'));
+        add_action('init', function () { $role = get_role('subscriber'); if ( $role && ! $role->has_cap('upload_files') ) { $role->add_cap('upload_files'); } });
+        add_action('admin_init', function () {
+    if ( current_user_can('administrator') ) return;
 
+    // Allow AJAX and upload endpoints
+    $pagenow = isset($GLOBALS['pagenow']) ? $GLOBALS['pagenow'] : '';
+    if ( wp_doing_ajax() ) return;
+    if ( in_array( $pagenow, array('admin-ajax.php','async-upload.php','admin-post.php'), true ) ) return;
+
+    // Everything else in wp-admin: redirect
+    wp_redirect( site_url('/dashboard/') );
+    exit;
+});
+        
         add_action('wp_login', function($user_login, $user){
-        // store as timestamp for easy formatting later
-        update_user_meta($user->ID, 'sta_last_login', current_time('timestamp'));
-         }, 10, 2);
+    // store as timestamp for easy formatting later
+    update_user_meta($user->ID, 'sta_last_login', current_time('timestamp'));
+}, 10, 2);
 
 
         
@@ -321,38 +334,112 @@ public function handle_ms_callback() {
     }
 }
 
+// // Limit the media modal (admin-ajax query-attachments) to current user's uploads
+// public function restrict_media_to_author( $args ) {
+//     // Let admins see everything
+//     if ( current_user_can('manage_options') ) {
+//         return $args;
+//     }
+//     $args['author'] = get_current_user_id();
+//     return $args;
+// }
+
 // Limit the media modal (admin-ajax query-attachments) to current user's uploads
 public function restrict_media_to_author( $args ) {
     // Let admins see everything
     if ( current_user_can('manage_options') ) {
         return $args;
     }
+
+    // If the user can't upload, don't interfere
+    if ( ! current_user_can('upload_files') ) {
+        return $args;
+    }
+
+    // Force author to current user
     $args['author'] = get_current_user_id();
+
+    // Attachments are usually 'inherit' status; keep query robust
+    if ( empty( $args['post_status'] ) ) {
+        $args['post_status'] = array( 'inherit', 'private' );
+    }
+
     return $args;
 }
+
+
+// // Limit the REST /wp/v2/media listing (some WP versions / contexts use REST)
+// public function restrict_media_to_author_rest( $args, $request ) {
+//     if ( current_user_can('manage_options') ) {
+//         return $args;
+//     }
+//     $args['author'] = get_current_user_id();
+//     return $args;
+// }
 
 // Limit the REST /wp/v2/media listing (some WP versions / contexts use REST)
 public function restrict_media_to_author_rest( $args, $request ) {
     if ( current_user_can('manage_options') ) {
         return $args;
     }
+
+    if ( ! current_user_can('upload_files') ) {
+        return $args;
+    }
+
+    // Only target media list routes
+    $route = method_exists( $request, 'get_route' ) ? $request->get_route() : '';
+    if ( strpos( $route, '/wp/v2/media' ) === false ) {
+        return $args;
+    }
+
     $args['author'] = get_current_user_id();
+
+    if ( empty( $args['status'] ) ) {
+        $args['status'] = array( 'inherit', 'private' );
+    }
+
     return $args;
 }
+
+
+// // Make sure new uploads are owned by the uploader (important for subscribers)
+// public function ensure_attachment_author( $attachment_id ) {
+//     if ( ! is_user_logged_in() ) return;
+//     if ( current_user_can('manage_options') ) return;
+
+//     $post = get_post( $attachment_id );
+//     if ( $post && (int) $post->post_author === 0 ) {
+//         wp_update_post( array(
+//             'ID' => $attachment_id,
+//             'post_author' => get_current_user_id(),
+//         ) );
+//     }
+// }
 
 // Make sure new uploads are owned by the uploader (important for subscribers)
 public function ensure_attachment_author( $attachment_id ) {
     if ( ! is_user_logged_in() ) return;
     if ( current_user_can('manage_options') ) return;
+    if ( ! current_user_can('upload_files') ) return;
 
     $post = get_post( $attachment_id );
-    if ( $post && (int) $post->post_author === 0 ) {
+    if ( ! $post || $post->post_type !== 'attachment' ) return;
+
+    $current = get_current_user_id();
+
+    // If attachment isn't attributed, or attributed to someone else, assign to current user
+    if ( intval( $post->post_author ) !== $current ) {
+        // Guard against recursive hooks
+        remove_action( 'add_attachment', array( $this, 'ensure_attachment_author' ) );
         wp_update_post( array(
-            'ID' => $attachment_id,
-            'post_author' => get_current_user_id(),
+            'ID'          => $attachment_id,
+            'post_author' => $current,
         ) );
+        add_action( 'add_attachment', array( $this, 'ensure_attachment_author' ) );
     }
 }
+
 
 
 }

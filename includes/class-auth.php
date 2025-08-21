@@ -16,25 +16,34 @@ class STA_Portal_Auth {
 
     }
 
+
+    
     public function handle_login_form() {
-        if ( isset( $_POST['sta_portal_login_nonce'] ) && wp_verify_nonce( $_POST['sta_portal_login_nonce'], 'sta_portal_login' ) ) {
-            $email    = sanitize_email( $_POST['sta_login_email'] );
-            $password = $_POST['sta_login_password'];
-            $creds = array(
-                'user_login'    => $email,
-                'user_password' => $password,
-                'remember'      => true
-            );
-            $user = wp_signon( $creds, false );
-            if ( is_wp_error( $user ) ) {
-                wp_redirect( add_query_arg('sta_error', urlencode($user->get_error_message()), wp_get_referer() ) );
-                exit;
-            } else {
-                wp_redirect( site_url('/dashboard/') );
-                exit;
-            }
+    if ( isset( $_POST['sta_portal_login_nonce'] ) && wp_verify_nonce( $_POST['sta_portal_login_nonce'], 'sta_portal_login' ) ) {
+        $email    = sanitize_email( $_POST['sta_login_email'] );
+        $password = $_POST['sta_login_password'];
+        $creds = array(
+            'user_login'    => $email,
+            'user_password' => $password,
+            'remember'      => false // always remember
+        );
+        $user = wp_signon( $creds, false );
+
+        if ( is_wp_error( $user ) ) {
+            wp_redirect( add_query_arg('sta_error', urlencode($user->get_error_message()), wp_get_referer() ) );
+            exit;
+        } else {
+
+            // Force a secure admin cookie so /wp-admin/async-upload.php is authorized.
+            wp_set_current_user( $user->ID );
+            wp_set_auth_cookie( $user->ID, false, true ); // remember=true, secure=true
+
+            wp_redirect( site_url('/dashboard/') );
+            exit;
         }
     }
+}
+
 
 
 	public function handle_signup_form() {
@@ -133,6 +142,8 @@ if ( $last === '' || !preg_match($NAME_RE, $last) ) {
         /* --------------------- POINT 4 END --------------------- */
     }
 }
+
+	
 
 
 public function handle_lost_password_form() {
@@ -279,11 +290,6 @@ public function handle_reset_password_form() {
     wp_safe_redirect( add_query_arg('sta_success', urlencode('Your password has been reset. Please log in.'), site_url('/login/')) );
     exit;
 }
-
-
-
-
-
 
 
 /**
