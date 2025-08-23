@@ -8,6 +8,9 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class STA_Portal_Hooks {
 
     public function __construct() {
+
+        add_action( 'template_redirect', array( 'STA_Portal_Hooks', 'redirect_site_root_to_portal' ) );
+
         // Protect the dashboard page for logged-in users only
         add_action('template_redirect', array($this, 'protect_dashboard_page'));
 
@@ -53,6 +56,31 @@ class STA_Portal_Hooks {
 
 
         
+    }
+
+     // Redirect site root "/" to Login (guest) or Dashboard (logged-in)
+    public static function redirect_site_root_to_portal() {
+    // Only front-end
+    if ( is_admin() || wp_doing_ajax() ) return;
+    if ( defined('REST_REQUEST') && REST_REQUEST ) return;
+    if ( defined('DOING_CRON') && DOING_CRON ) return;
+
+    // Only when the request is exactly the root path
+    $req_path = parse_url( $_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH );
+    if ( $req_path !== '/' ) return;
+
+    // Avoid loops if root already points to one of these (defensive)
+    $current = trailingslashit( home_url( $req_path ) );
+    $login   = trailingslashit( site_url('/login/') );
+    $dash    = trailingslashit( site_url('/dashboard/') );
+    if ( $current === $login || $current === $dash ) return;
+
+    if ( is_user_logged_in() ) {
+        wp_redirect( $dash );
+    } else {
+        wp_redirect( $login );
+    }
+    exit;
     }
 
     /**
