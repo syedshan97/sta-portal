@@ -10,6 +10,10 @@ class STA_Portal_Profile {
 
         // Avatar upload (AJAX, logged-in)
         add_action('wp_ajax_sta_portal_save_avatar', array($this, 'ajax_save_avatar'));
+
+         // Change Password on Manage Profile
+        add_action('admin_post_sta_change_password', array($this, 'handle_change_password'));
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_profile_assets'));
     }
 
     public function redirect_login() {
@@ -129,4 +133,87 @@ if ( $last === '' || !preg_match($NAME_RE, $last) ) {
         $url = wp_get_attachment_image_url($att_id, 'thumbnail');
         wp_send_json_success(['url' => $url]);
     }
+
+    public function enqueue_profile_assets() {
+    if ( function_exists('is_page') && is_page('manage-profile') ) {
+        // JS already used on signup/reset; reuse it for the ticker here too
+        wp_enqueue_script('sta-portal-js', STA_PORTAL_URL . 'assets/js/sta-portal.js', array(), '1.0.0', true);
+        // If your password checklist styles live in sta-portal.css, enqueue that too
+        wp_enqueue_style('sta-portal-css', STA_PORTAL_URL . 'assets/css/sta-portal.css', array(), '1.0.0');
+    }
+}
+
+
+    public function handle_change_password() {
+    // Only logged-in users may change their password
+    if ( ! is_user_logged_in() ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('You must be logged in.'), site_url('/login/')) );
+        exit;
+    }
+
+    // Nonce
+    if ( empty($_POST['sta_change_pass_nonce']) || ! wp_verify_nonce($_POST['sta_change_pass_nonce'], 'sta_change_password') ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('Security check failed.'), site_url('/manage-profile/')) );
+        exit;
+    }
+
+    $uid     = get_current_user_id();
+    $user    = wp_get_current_user();
+    $back    = site_url('/manage-profile/');
+
+    // Read inputs
+    $current = (string) trim( wp_unslash( $_POST['sta_pass_current'] ?? '' ) );
+    $new1    = (string) trim( wp_unslash( $_POST['sta_pass_new1']   ?? '' ) );
+    $new2    = (string) trim( wp_unslash( $_POST['sta_pass_new2']   ?? '' ) );
+
+    // Validate current password
+    if ( ! wp_check_password( $current, $user->data->user_pass, $uid ) ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('Current password is incorrect.'), $back) );
+        exit;
+    }
+
+    // Match
+    if ( $new1 === '' || $new2 === '' || $new1 !== $new2 ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('New passwords do not match.'), $back) );
+        exit;
+    }
+
+    // Complexity (same as your reset/signup rules)
+    $okLen   = strlen($new1) >= 8;
+    $okUpper = (bool) preg_match('/[A-Z]/', $new1);
+    $okLower = (bool) preg_match('/[a-z]/', $new1);
+    $okDigit = (bool) preg_match('/\d/',    $new1);
+    $okSym   = (bool) preg_match('/[^A-Za-z0-9]/', $new1) && !preg_match('/[<>]/', $new1);
+
+    if ( !($okLen && $okUpper && $okLower && $okDigit && $okSym) ) {
+        $missing = array();
+        if (!$okLen)   $missing[] = '8+ characters';
+        if (!$okUpper) $missing[] = 'an uppercase letter';
+        if (!$okLower) $missing[] = 'a lowercase letter';
+        if (!$okDigit) $missing[] = 'a number';
+        if (!$okSym)   $missing[] = 'a special character (not < or >)';
+        $msg = 'Password does not meet the requirements: missing ' . implode(', ', $missing) . '.';
+        wp_safe_redirect( add_query_arg('sta_error', urlencode($msg), $back) );
+        exit;
+    }
+
+    // Optional: prevent reusing current password
+    if ( wp_check_password( $new1, $user->data->user_pass, $uid ) ) {
+        wp_safe_redirect( add_query_arg('sta_error', urlencode('New password must be different from the current password.'), $back) );
+        exit;
+    }
+
+    // Change password (logs out sessions)
+    wp_set_password( $new1, $uid );
+
+    // Re-auth so the user stays on the page (session cookie, secure)
+    wp_set_current_user( $uid );
+    wp_set_auth_cookie( $uid, false, true );
+
+    update_user_meta( $uid, 'sta_last_password_change', current_time('timestamp') );
+
+    wp_safe_redirect( add_query_arg('sta_success', urlencode('Password updated successfully.'), $back) );
+    exit;
+}
+
 }

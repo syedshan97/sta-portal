@@ -227,4 +227,67 @@ function validateP2() {
   });
 })();
 
+// ===== Manage Profile: Password form validation =====
+(function(){
+  var p1 = document.getElementById('sta-pass-new1');
+  var p2 = document.getElementById('sta-pass-new2');
+  if (!p1 || !p2) return;
+
+  var liLen   = document.getElementById('reqp-len');
+  var liUp    = document.getElementById('reqp-upper');
+  var liLow   = document.getElementById('reqp-lower');
+  var liNum   = document.getElementById('reqp-num');
+  var liSym   = document.getElementById('reqp-sym');
+  var confirmMsg = document.getElementById('msg-profile-confirm');
+
+  function setPass(el, ok){ if (!el) return; el.classList.toggle('pass', !!ok); }
+
+  function validateP1Profile(){
+    var v = p1.value || '';
+    var okLen   = v.length >= 8;
+    var okUp    = /[A-Z]/.test(v);
+    var okLow   = /[a-z]/.test(v);
+    var okNum   = /\d/.test(v);
+    var okSym   = /[^A-Za-z0-9]/.test(v) && !/[<>]/.test(v);
+
+    setPass(liLen, okLen);
+    setPass(liUp, okUp);
+    setPass(liLow, okLow);
+    setPass(liNum, okNum);
+    setPass(liSym, okSym);
+
+    var okAll = okLen && okUp && okLow && okNum && okSym;
+    p1.classList.toggle('is-valid', okAll);
+    return okAll;
+  }
+
+  function validateP2Profile(){
+    var same = (p2.value || '') !== '' && p2.value === (p1.value || '');
+    if (confirmMsg) {
+      if (same) { confirmMsg.textContent = 'Password matched.'; confirmMsg.classList.add('ok'); }
+      else { confirmMsg.textContent = (p2.value ? 'Passwords do not match.' : ''); confirmMsg.classList.remove('ok'); }
+    }
+    p2.classList.toggle('is-valid', same);
+    return same;
+  }
+
+  p1.addEventListener('input', function(){ validateP1Profile(); validateP2Profile(); });
+  p2.addEventListener('input', validateP2Profile);
+
+  var form = document.getElementById('sta-change-pass-form');
+  if (form) {
+    form.addEventListener('submit', function(e){
+      var ok1 = validateP1Profile();
+      var ok2 = validateP2Profile();
+      if (!(ok1 && ok2)) {
+        e.preventDefault();
+        if (!ok1) p1.focus(); else p2.focus();
+      }
+    });
+  }
+})();
+
+
+
+
 

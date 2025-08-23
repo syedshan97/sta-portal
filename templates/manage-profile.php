@@ -31,6 +31,8 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
 $lock_identity = true;
 
 
+
+
 ?>
 <div class="sta-profile sta-profile--wide">
   <?php if ($error): ?><div class="sta-alert sta-alert--error"><?php echo esc_html($error); ?></div><?php endif; ?>
@@ -160,10 +162,60 @@ $lock_identity = true;
       </div>
     </div>
 
-    <div class="sta-password-row">
-      <a class="sta-link" href="<?php echo esc_url( site_url('/forgot-password/') ); ?>">Set / Change Password</a>
-    </div>
+    <!--<div class="sta-password-row">-->
+    <!--  <a class="sta-link" href="<?php echo esc_url( site_url('/forgot-password/') ); ?>">Set / Change Password</a>-->
+    <!--</div>-->
+    
+   
+
 
     <button type="submit" class="sta-primary-btn">Save the Changes</button>
   </form>
+   <!-- ===== Password Section (separate form) ===== -->
+<h3 class="sta-section-title">Password</h3>
+
+<form id="sta-change-pass-form" class="sta-profile__form" method="post" action="<?php echo esc_url( admin_url('admin-post.php') ); ?>" autocomplete="off">
+  <input type="hidden" name="action" value="sta_change_password">
+  <?php wp_nonce_field('sta_change_password','sta_change_pass_nonce'); ?>
+
+  <div class="sta-grid">
+    <div class="sta-field full" id="field-pass-current">
+      <label for="sta-pass-current">Current password</label>
+      <div class="sta-input-wrap">
+        <input type="password" id="sta-pass-current" name="sta_pass_current" required>
+      </div>
+    </div>
+
+    <div class="sta-field full" id="field-pass-new1">
+      <label for="sta-pass-new1">New password</label>
+      <div class="sta-input-wrap">
+        <input type="password" id="sta-pass-new1" name="sta_pass_new1" required>
+      </div>
+
+      <!-- Password requirements (same style as signup/reset) -->
+      <ul class="sta-req-list" id="pwd-req-profile" aria-live="polite">
+        <li id="reqp-len">At least 8 characters</li>
+        <li id="reqp-upper">Contains an uppercase letter</li>
+        <li id="reqp-lower">Contains a lowercase letter</li>
+        <li id="reqp-num">Contains a number</li>
+        <li id="reqp-sym">Contains a special character (not &lt; or &gt;)</li>
+      </ul>
+    </div>
+
+    <div class="sta-field full" id="field-pass-new2">
+      <label for="sta-pass-new2">Confirm new password</label>
+      <div class="sta-input-wrap">
+        <input type="password" id="sta-pass-new2" name="sta_pass_new2" required>
+      </div>
+      <small class="sta-field-msg" id="msg-profile-confirm"></small>
+    </div>
+  </div>
+
+  <div class="sta-password-row" style="margin-top:8px;">
+    <a class="sta-link" href="<?php echo esc_url( site_url('/forgot-password/') ); ?>">Forgot your password?</a>
+  </div>
+
+  <button type="submit" class="sta-primary-btn">Update Password</button>
+</form>
+<!-- ===== /Password Section ===== -->
 </div>
