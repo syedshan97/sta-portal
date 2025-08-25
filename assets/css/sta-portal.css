@@ -33,13 +33,13 @@
 }
 .sta-portal-login-form input,
 .sta-portal-signup-form input {
-  width: 100%;
-  padding: 13px 14px;
+  width: 100% !important;
+  padding: 13px 14px !important;
   font-size: 1rem;
   border: 1px solid #e1e2e6;
-  border-radius: 30px;
+  border-radius: 30px !important;
   outline: none;
-  margin-bottom: 4px;
+  margin-bottom: 8px !important;
   background: #f9fafd;
   transition: border-color 0.2s;
 }
@@ -106,6 +106,36 @@
   margin-top: 18px;
   font-size: 0.97rem;
 }
+
+/* Hide/Show Toggle text on Password field*/
+
+/* Password toggle as simple text on the right */
+.sta-passwrap{ position:relative; }
+.sta-passwrap .sta-pass{ padding-right:72px; }
+
+.sta-toggle-pass {
+    position: absolute;
+    right: 25px;
+    top: 43%;
+    transform: translateY(-50%);
+    display: inline-block;
+    font-size: .9rem;
+    color: #757575;
+    background: transparent !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0;
+    line-height: 1;
+    cursor: pointer;
+    text-transform: UPPERCASE;
+}
+.sta-toggle-pass:hover{ text-decoration:none; }
+.sta-passwrap.revealed .sta-pass{
+  border-color:#10b981;
+  box-shadow: inset 0 0 0 1px #10b981;
+}
+
+
 @media (max-width: 520px) {
   .sta-portal-login-form, .sta-portal-signup-form {
     max-width: 98vw;
@@ -302,6 +332,7 @@ input.is-valid{ border:1px solid #16a34a; }
 }
 .sta-profile .is-locked:focus{ outline:none !important; box-shadow:none !important; }
 .sta-profile .is-locked + .sta-pencil{ display:none !important; }
+
 
 /* Password checklist + states on Manage Profile */
 .sta-profile .sta-req-list { list-style:none; padding:0; margin:8px 0 0; }

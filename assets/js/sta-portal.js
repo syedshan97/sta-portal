@@ -287,6 +287,33 @@ function validateP2() {
   }
 })();
 
+//Show/Hide Toggle Passowrd Reveal for Passowrd Field.
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.sta-passwrap').forEach(function (wrap) {
+    var input  = wrap.querySelector('input[type="password"], input[type="text"]');
+    var toggle = wrap.querySelector('.sta-toggle-pass');
+    if (!input || !toggle) return;
+
+    function setMode(show) {
+      var s = input.selectionStart, e = input.selectionEnd;
+      input.type = show ? 'text' : 'password';
+      toggle.textContent = show ? 'Hide' : 'Show';
+      toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+      wrap.classList.toggle('revealed', show);
+      try { if (s != null && e != null) input.setSelectionRange(s, e); } catch(_) {}
+      input.focus();
+    }
+
+    function toggleClick(){ setMode(input.type === 'password'); }
+
+    toggle.addEventListener('click', toggleClick);
+    toggle.addEventListener('keydown', function(ev){
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggleClick(); }
+    });
+  });
+});
+
 
 
 
