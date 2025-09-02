@@ -10,18 +10,34 @@ class STA_Portal_Profile {
 
         // Avatar upload (AJAX, logged-in)
         add_action('wp_ajax_sta_portal_save_avatar', array($this, 'ajax_save_avatar'));
-
-         // Change Password on Manage Profile
+        
+        // Change Password on Manage Profile
         add_action('admin_post_sta_change_password', array($this, 'handle_change_password'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_profile_assets'));
+        
+        add_action('wp_ajax_sta_remove_avatar', [$this, 'ajax_remove_avatar']);
     }
+    
+    public function ajax_remove_avatar() {
+    if ( ! is_user_logged_in() ) {
+        wp_send_json_error(['message' => 'Not logged in'], 401);
+    }
+    if ( empty($_POST['nonce']) || ! wp_verify_nonce($_POST['nonce'], 'sta_remove_avatar') ) {
+        wp_send_json_error(['message' => 'Invalid request'], 403);
+    }
+
+    $user_id = get_current_user_id();
+    delete_user_meta($user_id, 'sta_avatar_id'); // do NOT delete the media file
+    wp_send_json_success(['message' => 'Avatar removed']);
+}
+
 
     public function redirect_login() {
         wp_safe_redirect( site_url('/login/') );
         exit;
     }
 
-    public function handle_profile_save() {
+public function handle_profile_save() {
     $back = wp_get_referer() ?: site_url('/manage-profile/');
 
     if ( empty($_POST['sta_profile_nonce']) || ! wp_verify_nonce($_POST['sta_profile_nonce'], 'sta_profile_save') ) {
@@ -133,7 +149,7 @@ if ( $last === '' || !preg_match($NAME_RE, $last) ) {
         $url = wp_get_attachment_image_url($att_id, 'thumbnail');
         wp_send_json_success(['url' => $url]);
     }
-
+    
     public function enqueue_profile_assets() {
     if ( function_exists('is_page') && is_page('manage-profile') ) {
         // JS already used on signup/reset; reuse it for the ticker here too
@@ -215,5 +231,6 @@ if ( $last === '' || !preg_match($NAME_RE, $last) ) {
     wp_safe_redirect( add_query_arg('sta_success', urlencode('Password updated successfully.'), $back) );
     exit;
 }
+
 
 }

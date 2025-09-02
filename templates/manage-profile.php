@@ -34,17 +34,63 @@ $lock_identity = true;
 
 
 ?>
+
+<?php
+// Ensure JS + AJAX data are available on this page
+wp_enqueue_script('sta-portal-js', STA_PORTAL_URL . 'assets/js/sta-portal.js', [], '1.0.0', true);
+wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
+  'url'   => admin_url('admin-ajax.php'),
+  'nonce' => wp_create_nonce('sta_remove_avatar'),
+]);
+?>
+
 <div class="sta-profile sta-profile--wide">
   <?php if ($error): ?><div class="sta-alert sta-alert--error"><?php echo esc_html($error); ?></div><?php endif; ?>
   <?php if ($success): ?><div class="sta-alert sta-alert--success"><?php echo esc_html($success); ?></div><?php endif; ?>
 
   <div class="sta-profile__top">
+    <!--<div class="sta-profile__avatar">-->
+    <!--  <div class="sta-avatar-wrap">-->
+    <!--    <img src="<?php echo esc_url($avatar); ?>" alt="Avatar" id="sta-avatar-preview">-->
+    <!--  </div>-->
+    <!--  <button type="button" class="sta-btn sta-btn-light" id="sta-change-avatar">Upload</button>-->
+    <!--</div>-->
     <div class="sta-profile__avatar">
-      <div class="sta-avatar-wrap">
-        <img src="<?php echo esc_url($avatar); ?>" alt="Avatar" id="sta-avatar-preview">
-      </div>
-      <button type="button" class="sta-btn sta-btn-light" id="sta-change-avatar">Upload</button>
+  <div
+    class="sta-avatar-card"
+    id="sta-avatar-card"
+    data-has="<?php echo $avatar_id ? '1' : '0'; ?>"
+    data-placeholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='45%25' r='70%25'%3E%3Cstop stop-color='%23eceff4' offset='0'/%3E%3Cstop stop-color='%23e5e7eb' offset='1'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='98' fill='url(%23g)'/%3E%3Ccircle cx='100' cy='80' r='28' fill='%23bfc7d3'/%3E%3Cpath d='M40 152c8-28 32-40 60-40s52 12 60 40' fill='%23cdd5df'/%3E%3C/svg%3E"
+  >
+    <img
+      src="<?php echo esc_url($avatar); ?>"
+      id="sta-avatar-preview"
+      class="sta-avatar-img"
+      alt="Profile photo"
+      draggable="false"
+    />
+    <span class="sta-avatar-hint" aria-hidden="true">Change / Remove</span>
+    <span class="sta-avatar-chip" id="sta-avatar-chip">Upload</span>
+  </div>
+
+  <!-- keep your hidden trigger so existing media flow works -->
+  <button type="button" class="sr-only" id="sta-change-avatar">Upload</button>
+</div>
+
+<!-- Avatar action modal -->
+<div class="sta-modal" id="sta-avatar-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="sam-title">
+  <div class="sta-modal__backdrop" data-close></div>
+  <div class="sta-modal__panel" role="document">
+    <button type="button" class="sam-close" data-close aria-label="Close">&times;</button>
+    <h3 id="sam-title">Profile Photo</h3>
+    <p class="sam-desc">Choose an action for your profile picture.</p>
+    <div class="sam-actions">
+      <button type="button" class="sam-btn sam-primary" id="sam-change">Change profile picture</button>
+      <button type="button" class="sam-btn sam-danger"  id="sam-remove">Remove profile picture</button>
     </div>
+  </div>
+</div>
+
     <div class="sta-profile__headtext">
       <div class="sta-profile__name"><?php echo esc_html($user->display_name ?: $user->user_login); ?></div>
       <div class="sta-profile__sub">

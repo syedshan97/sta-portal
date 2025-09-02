@@ -31,3 +31,104 @@
 .sta-primary-btn:hover{background:#c20937}
 
 @media (max-width:960px){.sta-grid{grid-template-columns:1fr}}
+
+/* ===== Avatar card ===== */
+.sta-avatar-card{
+  position:relative;
+  width:160px; height:160px;
+  border-radius:50%;
+  overflow:hidden;
+  border:3px solid #EEF2F7;
+  background:#F3F6FB;
+  box-shadow:0 2px 12px rgba(17,24,39,.08);
+  cursor:pointer;
+}
+.sta-avatar-img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+/* Chip shown only when empty */
+.sta-avatar-chip{
+  position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
+  background:rgba(0,0,0,.55); color:#fff;
+  padding:6px 10px; border-radius:999px; font-weight:600; font-size:.9rem;
+  display:none;
+}
+.sta-avatar-card[data-has="0"] .sta-avatar-chip{ display:inline-block; }
+
+.sr-only{ position:absolute !important; width:1px;height:1px; padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+
+/* Resize on small screens */
+@media (max-width:640px){ .sta-avatar-card{ width:132px; height:132px; } }
+
+/* ===== Modal ===== */
+.sta-modal{ position:fixed; inset:0; z-index:10000; display:none; }
+.sta-modal.is-open{ display:block; }
+.sta-modal__backdrop{
+  position:absolute; inset:0; background:rgba(15,23,42,.45);
+  backdrop-filter:blur(2px);
+}
+.sta-modal__panel{
+  position:relative; z-index:1;
+  width:min(92vw, 480px); margin:12vh auto 0;
+  background:#fff; border-radius:16px; border:1px solid #e7ebf2;
+  box-shadow:0 20px 50px rgba(2,6,23,.18);
+  padding:20px 18px 18px;
+}
+.sam-close{
+  position:absolute; right:10px; top:8px;
+  background:transparent; border:0; font-size:26px; line-height:1;
+  color:#6b7280; cursor:pointer;
+}
+#sam-title{ margin:4px 0 6px; font-size:1.15rem; color:#111827; }
+.sam-desc{ margin:0 0 14px; color:#6b7280; }
+.sam-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.sam-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:10px 14px; border-radius:10px; border:1px solid transparent;
+  font-weight:600; cursor:pointer; min-width: 210px;
+}
+.sam-primary{ background:#0ea5e9; border-color:#0ea5e9; color:#fff; }
+.sam-primary:hover{ background:#0284c7; border-color:#0284c7; }
+.sam-danger{ background:#fff; border-color:#fecaca; color:#b91c1c; }
+.sam-danger:hover{ background:#fff5f5; }
+
+/* Mobile modal layout */
+@media (max-width:480px){
+  .sta-modal__panel{ width:92vw; margin:18vh auto 0; padding:18px 14px 14px; }
+  .sam-btn{ width:100%; min-width:0; }
+}
+
+/* Hover hint overlay for existing avatar */
+.sta-avatar-hint{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight:700;
+  font-size:.95rem;
+  text-shadow:0 1px 2px rgba(0,0,0,.28);
+  background:rgba(0,0,0,.35);
+  border-radius:50%;
+  opacity:0;
+  transition:opacity .15s ease-in-out;
+  pointer-events:none; /* allow clicks to pass through to card */
+}
+
+/* Always show the hint when a photo exists */
+.sta-avatar-card[data-has="1"] .sta-avatar-hint{
+  opacity:1;                    /* <- was 0, show it always */
+  background:rgba(0,0,0,.22);   /* softer when idle */
+}
+
+/* Optional: slightly darken on hover/focus for feedback */
+.sta-avatar-card[data-has="1"]:hover .sta-avatar-hint,
+.sta-avatar-card[data-has="1"]:focus-within .sta-avatar-hint{
+  background:rgba(0,0,0,.35);
+}
+
+/* Keep hidden in empty state (Upload chip handles that) */
+.sta-avatar-card[data-has="0"] .sta-avatar-hint{
+  display:none;
+}
+
