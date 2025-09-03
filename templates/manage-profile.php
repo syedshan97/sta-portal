@@ -31,8 +31,6 @@ $success = isset($_GET['sta_success']) ? urldecode($_GET['sta_success']) : '';
 $lock_identity = true;
 
 
-
-
 ?>
 
 <?php
@@ -112,7 +110,7 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
       <div class="sta-field half">
         <label for="sta-first-name">First name</label>
         <div class="sta-input-wrap">
-<input type="text" id="sta-first-name" name="sta_first_name" value="<?php echo esc_attr($fn); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)" <?php echo $lock_identity ? 'readonly aria-readonly="true" class="is-locked"' : ''; ?> >          <span class="sta-pencil"></span>
+<input style="cursor: not-allowed;" type="text" id="sta-first-name" name="sta_first_name" value="<?php echo esc_attr($fn); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)" <?php echo $lock_identity ? 'readonly aria-readonly="true" class="is-locked"' : ''; ?> <span class="sta-pencil"></span>
         </div>
       </div>
 
@@ -121,7 +119,7 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
         <label for="sta-last-name">Last name</label>
         <div class="sta-input-wrap">
          <!--<input type="text" id="sta-last-name" name="sta_last_name" value="<?php echo esc_attr($ln); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)">-->
-         <input type="text" id="sta-last-name" name="sta_last_name" value="<?php echo esc_attr($ln); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)" <?php echo $lock_identity ? 'readonly aria-readonly="true" class="is-locked"' : ''; ?> >
+         <input style="cursor: not-allowed;" type="text" id="sta-last-name" name="sta_last_name" value="<?php echo esc_attr($ln); ?>" required pattern="^[A-Za-z]+(?:[ '\-][A-Za-z]+)*$" title="Use English letters and spaces (hyphen/apostrophe allowed)" <?php echo $lock_identity ? 'readonly aria-readonly="true" class="is-locked"' : ''; ?> >
           <span class="sta-pencil"></span>
         </div>
       </div>
@@ -130,7 +128,7 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
         <label>Job Title</label>
         <div class="sta-input-wrap">
           <input type="text" name="sta_job_title" value="<?php echo esc_attr($job_title); ?>">
-          <span class="sta-pencil">✎</span>
+          <span class="sta-pencil"><i class="fa fa-pencil" aria-hidden="true"></i></span>
         </div>
       </div>
 
@@ -138,7 +136,7 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
         <label>Organization</label>
         <div class="sta-input-wrap">
           <input type="text" name="sta_org" value="<?php echo esc_attr($org); ?>">
-          <span class="sta-pencil">✎</span>
+          <span class="sta-pencil"><i class="fa fa-pencil" aria-hidden="true"></i></span>
         </div>
       </div>
 
@@ -146,7 +144,7 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
         <label>Email</label>
         <div class="sta-input-wrap">
           <!--<input type="email" name="sta_email" value="<?php echo esc_attr($user->user_email); ?>" required>-->
-          <input type="email" name="sta_email" value="<?php echo esc_attr($user->user_email); ?>" required <?php echo $lock_identity ? 'readonly aria-readonly="true" class="is-locked"' : ''; ?> >
+          <input style="cursor: not-allowed;" type="email" name="sta_email" value="<?php echo esc_attr($user->user_email); ?>" required <?php echo $lock_identity ? 'readonly aria-readonly="true" class="is-locked"' : ''; ?> >
           <span class="sta-pencil"></span>
         </div>
       </div>
@@ -160,10 +158,11 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
                  placeholder="+14155551212"
                  pattern="^\+[1-9]\d{7,14}$"
                  title="Include country code, e.g. +14155551212">
-          <span class="sta-pencil">✎</span>
+          <span class="sta-pencil"><i class="fa fa-pencil" aria-hidden="true"></i></span>
         </div>
       </div>
     </div>
+<hr style="border: 1px solid #d7d7d7;margin: 50px 0 35px;">
 
     <h3 class="sta-section-title">Address</h3>
     <div class="sta-grid">
@@ -171,7 +170,7 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
         <label>Street Address</label>
         <div class="sta-input-wrap">
           <input type="text" name="sta_addr_street" value="<?php echo esc_attr($addr_street); ?>">
-          <span class="sta-pencil">✎</span>
+          <span class="sta-pencil"><i class="fa fa-pencil" aria-hidden="true"></i></span>
         </div>
       </div>
 
@@ -179,7 +178,7 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
         <label>City</label>
         <div class="sta-input-wrap">
           <input type="text" name="sta_addr_city" value="<?php echo esc_attr($addr_city); ?>">
-          <span class="sta-pencil">✎</span>
+          <span class="sta-pencil"><i class="fa fa-pencil" aria-hidden="true"></i></span>
         </div>
       </div>
 
@@ -187,7 +186,7 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
         <label>State/Province</label>
         <div class="sta-input-wrap">
           <input type="text" name="sta_addr_state" value="<?php echo esc_attr($addr_state); ?>">
-          <span class="sta-pencil">✎</span>
+          <span class="sta-pencil"><i class="fa fa-pencil" aria-hidden="true"></i></span>
         </div>
       </div>
 
@@ -195,7 +194,7 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
         <label>Country</label>
         <div class="sta-input-wrap">
           <input type="text" name="sta_addr_country" value="<?php echo esc_attr($addr_country); ?>">
-          <span class="sta-pencil">✎</span>
+          <span class="sta-pencil"><i class="fa fa-pencil" aria-hidden="true"></i></span>
         </div>
       </div>
 
@@ -203,7 +202,7 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
         <label>Postal Code</label>
         <div class="sta-input-wrap">
           <input type="text" name="sta_addr_postal" value="<?php echo esc_attr($addr_postal); ?>">
-          <span class="sta-pencil">✎</span>
+          <span class="sta-pencil"><i class="fa fa-pencil" aria-hidden="true"></i></span>
         </div>
       </div>
     </div>
@@ -217,6 +216,8 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
 
     <button type="submit" class="sta-primary-btn">Save the Changes</button>
   </form>
+  <hr style="border: 1px solid #d7d7d7;margin: 30px 0 35px;">
+
    <!-- ===== Password Section (separate form) ===== -->
 <h3 class="sta-section-title">Password</h3>
 
@@ -257,11 +258,18 @@ wp_localize_script('sta-portal-js', 'STA_PORTAL_AJAX', [
     </div>
   </div>
 
-  <div class="sta-password-row" style="margin-top:8px;">
-    <a class="sta-link" href="<?php echo esc_url( site_url('/forgot-password/') ); ?>">Forgot your password?</a>
-  </div>
+  <!--<div class="sta-password-row" style="margin-top:8px;">-->
+  <!--  <a class="sta-link" href="<?php echo esc_url( site_url('/forgot-password/') ); ?>">Forgot your password?</a>-->
+  <!--</div>-->
 
   <button type="submit" class="sta-primary-btn">Update Password</button>
 </form>
 <!-- ===== /Password Section ===== -->
+<hr style="border: 1px solid #d7d7d7;margin: 30px 0 35px;">
+
+<h3 class="sta-section-title">Password Reset</h3>
+<div class="sta-password-row" style="margin-top:8px;">
+    <a style="color:#2DA8E0;" class="sta-link" href="<?php echo esc_url( site_url('/forgot-password/') ); ?>">Forgot your password? Click Here to Reset . . .</a>
+  </div>
+
 </div>
